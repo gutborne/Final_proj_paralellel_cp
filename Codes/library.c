@@ -1,7 +1,8 @@
 #include "final_proj.h"
-#include <stdio.h>
-#include <stdlib.h>
+
 //================================Chromosome Instructions========================================
+
+
 int add(int regA, int regB){
     return regA + regB;
 }
@@ -62,7 +63,17 @@ void genetic_alg(Population* population, int gens){
 
 }
 
-void initialize_population(Population* population, int size) {
-
+void initialize_population(Population* population) {
+    srand((unsigned) time(NULL));
+    population->chromosomes->size = 16;
+    double rand_val = 0;
+    int chromosome_size = population->chromosomes->size;
+    for(int i = 0; i < population->size; i++){
+        population->chromosomes[i].double_arr = malloc(sizeof(double) * chromosome_size);
+        for(int j = 0; j < chromosome_size; j++){
+            rand_val = (double)rand() / RAND_MAX;
+            population->chromosomes[i].double_arr[j] = rand_val;
+        }
+    }
 }
 //================================GA Functions================================================

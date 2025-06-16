@@ -1,18 +1,13 @@
 #ifndef FINAL_PROJ_H
 #define FINAL_PROJ_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #define TRUE 1
 #define FALSE 0
 
 typedef struct CHROMOSOME Chromosome;
 typedef struct POPULATION Population;
-
-typedef struct POPULATION{
-    Chromosome* chromosomes; // Pointer to an array of chromosomes
-    int size; // Number of chromosomes in the population
-    int generation; // Current generation number
-    double best_fitness; // Best fitness value in the population
-    Chromosome best_chromosome; // Best chromosome in the population
-}Population;
 
 typedef struct CHROMOSOME{
     double* double_arr; 
@@ -21,6 +16,14 @@ typedef struct CHROMOSOME{
     double fitness;
     int size; // Number of elements in the chromosome
 }Chromosome;
+
+typedef struct POPULATION{
+    Chromosome* chromosomes; // Pointer to an array of chromosomes
+    int size; // Number of chromosomes in the population
+    int generation; // Current generation number
+    double best_fitness; // Best fitness value in the population
+    Chromosome best_chromosome; // Best chromosome in the population
+}Population;
 
 //================================Chromosome Instructions========================================
 /**
@@ -135,8 +138,7 @@ void genetic_alg(Population* population, int gens);
 /**
  * @brief Initializes the population with a specified size.
  * @param population Pointer to the population structure.
- * @param size Size of the population to be initialized.
  */
-void initialize_population(Population* population, int size);
+void initialize_population(Population* population);
 //================================GA Functions================================================
 #endif
