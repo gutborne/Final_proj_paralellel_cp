@@ -131,14 +131,23 @@ void selection(Population* population);
 /**
  * @brief Runs the genetic algorithm for a specified number of generations.
  * @param population Pointer to the population structure.
- * @param gens Number of generations to run the algorithm.
  */
-void genetic_alg(Population* population, int gens);
+void genetic_alg(Population* population);
+
 
 /**
- * @brief Initializes the population with a specified size.
+ * @brief Prints the population of chromosomes.
  * @param population Pointer to the population structure.
+ * @param chromosome_size how many elements each chromosome will have.
  */
-void initialize_population(Population* population);
+void initialize_population(Population* population, int chrom_size);
+
+
+/**
+ * @brief Evaluates the fitness of each chromosome in the population.
+ * @param population Pointer to the population structure.
+ * @param validation_chrom Pointer to a chromosome used for validation.
+ */
+void fitness_func(Population* population, Chromosome* validation_chrom); 
 //================================GA Functions================================================
 #endif

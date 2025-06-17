@@ -59,13 +59,16 @@ void selection(Population* population){
     // Implement selection logic here
 } 
 
-void genetic_alg(Population* population, int gens){
+void fitness_func(Population* population, Chromosome* validation_chrom){
 
 }
+void genetic_alg(Population* population){
+    
+}
 
-void initialize_population(Population* population) {
+void initialize_population(Population* population, int chrom_size) {
     srand((unsigned) time(NULL));
-    population->chromosomes->size = 16;
+    population->chromosomes->size = chrom_size;
     double rand_val = 0;
     int chromosome_size = population->chromosomes->size;
     for(int i = 0; i < population->size; i++){
