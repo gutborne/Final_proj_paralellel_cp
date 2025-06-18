@@ -31,7 +31,7 @@ void isMemoryAllocated(void* pointer){
 }
 Chromosome* generate_validation(int chromosome_size){
     srand((unsigned) time(NULL));
-    Chromosome* validation_chrom = malloc(sizeof(Chromosome)* chromosome_size);
+    Chromosome* validation_chrom = malloc(sizeof(Chromosome));
     validation_chrom->size = chromosome_size;
     isMemoryAllocated(validation_chrom);
     validation_chrom->double_arr = malloc(sizeof(double)*chromosome_size);
@@ -50,7 +50,7 @@ int main(){
     Population population;
     population.size = 10;
     int chromosome_size = 16;
-    int is_memory_allocated;
+    //int is_memory_allocated;
     population.chromosomes = malloc(sizeof(Chromosome) * population.size);
     isMemoryAllocated(population.chromosomes);
     initialize_population(&population, chromosome_size);

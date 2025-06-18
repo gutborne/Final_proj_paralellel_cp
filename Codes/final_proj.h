@@ -57,11 +57,7 @@ int mult(int regA, int regB);
  */
 void mov(int* reg, int value);
 
-/**
- * @brief this function mutates a chromosome.
- * @param chromosome_n 
- */
-void mutation(Chromosome* chromosome_n);
+
 
 /**
  * @brief this function increments a register by 1.
