@@ -1,13 +1,27 @@
 #ifndef FINAL_PROJ_H
 #define FINAL_PROJ_H
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #define TRUE 1
 #define FALSE 0
 
+typedef struct INSTRUCTION Instruction;
+typedef struct EXPRESSION Expression;
 typedef struct CHROMOSOME Chromosome;
 typedef struct POPULATION Population;
+typedef struct INSTRUCTION{
+    char* name;
+    int(*ptr_to_func)(int, int);
+    char* code;
+}Instruction;
+
+typedef struct EXPRESSION{
+    Instruction* Instruction_arr;
+    int num_instructions; //how many instructions the expression has
+    int result;
+}Expression;
 
 typedef struct CHROMOSOME{
     double* double_arr; 
@@ -23,6 +37,7 @@ typedef struct POPULATION{
     int generation; // Current generation number
     double best_fitness; // Best fitness value in the population
     Chromosome best_chromosome; // Best chromosome in the population
+    Expression expression;
 }Population;
 
 //================================Chromosome Instructions========================================
@@ -52,24 +67,30 @@ int mult(int regA, int regB);
 
 /**
  * @brief this function moves a value into a register.
- * @param reg 
- * @param value 
+ * @param value value tha belongs to some register
+ * @param x is just a value to standardize the fuctions signatures
+ * @return int 
  */
-void mov(int* reg, int value);
+int mov(int value, int x);
 
 
 
 /**
- * @brief this function increments a register by 1.
- * @param reg 
+ * @brief this function increments an int value from the register by 1.
+ * @param reg hold the value that belongs to the register
+ * @param x is just a value to standardize the fuctions signatures
+ * return int 
  */
-void increment(int* reg);
+int increment(int reg, int x);
+
 
 /**
- * @brief this function decrements a register by 1.
- * @param reg 
+ * @brief this function decrements an int value from the register by 1.
+ * @param reg hold the value that belongs to the register
+ * @param x is just a value to standardize the fuctions signatures
+ * return int 
  */
-void decrement(int* reg);
+int decrement(int reg, int x);
 
 
 /**
@@ -95,6 +116,15 @@ int less_than(int regA, int regB);
  * @return int 
  */
 int module(int regA, int regB);
+
+
+/**
+ * @brief this function performs a logical AND operation on two registers.
+ * @param regA 
+ * @param regB 
+ * @return int 
+ */
+int and_function(int regA, int regB);
 //================================Chromosome Instructions========================================
 
 //================================GA Functions================================================

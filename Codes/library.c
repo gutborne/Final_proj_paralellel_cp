@@ -15,16 +15,16 @@ int mult(int regA, int regB){
     return regA * regB;
 }
 
-void mov(int* reg, int value){
-    *reg = value;
+int mov(int value, int x){
+    return value; // x is not used, but kept for signature consistency
 }
 
-void increment(int* reg){
-    *reg += 1;
+int increment(int reg, int x){
+    return reg++; // x is not used, but kept for signature consistency
 }
 
-void decrement(int* reg){
-    *reg -= 1;
+int decrement(int reg, int x){
+    return reg--; // x is not used, but kept for signature consistency
 }
 
 int greater_than(int regA, int regB){
@@ -37,6 +37,11 @@ int less_than(int regA, int regB){
 
 int module(int regA, int regB){
     return regA % regB;
+}
+
+int and_function(int regA, int regB){
+    int result = (regA == 1 && regB == 1)? 1: 0;
+    return result;
 }
 //================================Chromosome Instructions========================================
 
