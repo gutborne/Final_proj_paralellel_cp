@@ -182,10 +182,10 @@ void fitness_F5(Population* population) {
     for (int i = 0; i < population->size; i++) {
         Chromosome* chrom = &population->chromosomes[i];
         // Extrai valores dos registradores (assumindo 4 bits cada)
-        chrom->regA = bits_to_int(chrom->bin_arr, 0, 4);
-        chrom->regB = bits_to_int(chrom->bin_arr, 4, 4);
-        chrom->regC = bits_to_int(chrom->bin_arr, 8, 4);
-        chrom->regD = bits_to_int(chrom->bin_arr, 12, 4);
+        chrom->regA = bits_to_int(chrom->bin_arr, 0, 5);
+        chrom->regB = bits_to_int(chrom->bin_arr, 5, 5);
+        chrom->regC = bits_to_int(chrom->bin_arr, 10, 5);
+        chrom->regD = bits_to_int(chrom->bin_arr, 15, 5);
 
         char str[6] = {0};
         // Mapeia valores 0-25 para 'A'-'Z', senão usa '?'
@@ -196,16 +196,14 @@ void fitness_F5(Population* population) {
         str[4] = (chrom->regA >= 0 && chrom->regA < 26) ? ('A' + chrom->regA) : '?';
         str[5] = '\0';
 
-        // Fitness 1.0 se igual, 0.1 caso contrário
-        if (strcmp(str, TARGET) == 0) {
-            chrom->fitness = 1.0;
-        } else {
-            chrom->fitness = 0.1;
-            // Se quiser um fitness gradual (opcional, pode comentar/remover)
-            // int score = 0;
-            // for (int k = 0; k < 5; k++) if (str[k] == TARGET[k]) score++;
-            // chrom->fitness = 0.1 + 0.18 * score; // Máx: 1.0, mín: 0.1
+        // Fitness escalonado: +0.18 para cada letra certa (0.1 mínimo, 1.0 máximo)
+        int score = 0;
+        for (int k = 0; k < 5; k++) {
+            if (str[k] == TARGET[k]) score++;
         }
+        chrom->fitness = 0.1 + 0.18 * score; // 5 acertos: 1.0, 0 acertos: 0.1
+
+        printf("Chromosome %d: %s, Fitness: %.2f\n", i, str, chrom->fitness);
     }
 }
 

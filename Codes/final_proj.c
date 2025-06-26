@@ -50,8 +50,8 @@ int main(){
     Population population;
     population.best_chromosome.double_arr = NULL;
     population.best_chromosome.bin_arr = NULL;
-    population.size = 10;
-    int chromosome_size = 16;
+    population.size = 100;
+    int chromosome_size = 19;
     //int is_memory_allocated;
     population.chromosomes = malloc(sizeof(Chromosome) * population.size);
     isMemoryAllocated(population.chromosomes);
