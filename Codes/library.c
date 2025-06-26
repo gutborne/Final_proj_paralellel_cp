@@ -1,7 +1,18 @@
 #include "final_proj.h"
 
 //================================Chromosome Instructions========================================
-
+Instruction instructions[] = {
+    {"add", add, "0000"},
+    {"sub", sub, "0001"},
+    {"mult", mult, "0010"},
+    {"mov", mov, "0011"},
+    {"increment", increment, "0100"},
+    {"decrement", decrement, "0101"},
+    {"greater_than", greater_than, "0110"},
+    {"less_than", less_than, "0111"},
+    {"module", module, "1000"},
+    {"and_function", and_function, "1001"}
+}; 
 
 int add(int regA, int regB){
     return regA + regB;

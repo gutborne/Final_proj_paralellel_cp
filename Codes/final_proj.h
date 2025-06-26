@@ -4,8 +4,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
+
 #define TRUE 1
 #define FALSE 0
+#define NUM_REG 4
+#define INPUTS 2
+typedef struct {
+    int* regA;
+    char name;
+}ptrRegA;
+typedef struct {
+    int* regB;
+    char name;
+}ptrRegB;
+typedef struct {
+    int* regC;
+    char name;
+}ptrRegC;
+typedef struct {
+    int* regD;
+    char name;
+}ptrRegD;
+
 
 typedef struct INSTRUCTION Instruction;
 typedef struct EXPRESSION Expression;
@@ -15,10 +36,14 @@ typedef struct INSTRUCTION{
     char* name;
     int(*ptr_to_func)(int, int);
     char* code;
+    int** input_regs;
+    int* output_reg;
 }Instruction;
 
 typedef struct EXPRESSION{
-    Instruction* Instruction_arr;
+    int* registers;
+    Instruction* Instruc_arr;
+    Instruction* Instruc_output;
     int num_instructions; //how many instructions the expression has
     int result;
 }Expression;
@@ -26,7 +51,6 @@ typedef struct EXPRESSION{
 typedef struct CHROMOSOME{
     double* double_arr; 
     int* bin_arr;
-    int regA, regB, regC, regD;
     double fitness;
     int size; // Number of elements in the chromosome
 }Chromosome;
