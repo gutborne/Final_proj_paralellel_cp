@@ -71,16 +71,40 @@ void crossover(Chromosome* parent1, Chromosome* parent2){
     // Implement crossover logic here
 }
 
-void selection(Population* population){
+void selection(Population* pop){
     // Implement selection logic here
 } 
 
-void fitness_func(Population* population, Chromosome* validation_chrom){
-
-}
-void genetic_alg(Population* population){
+void fitness_func(Population* pop){
+    Chromosome* chrom_pop = pop->chromosomes;
+    int num_pop = pop->size;
+    int num_instructions = pop->e->num_instructions;
+    char* perfect_indiv = malloc(sizeof(char) * (num_instructions * 4 + 1));
+    for(int i = 0; i < num_instructions; i++){
+        if(i == 0)
+            sprintf(perfect_indiv, "%s", pop->e->Instruc_arr[i].code);
+        else
+            sprintf(perfect_indiv + (4 * i), "%s", pop->e->Instruc_arr[i].code);          
+    }
     
+    for(int i = 0; i < num_pop; i++){
+        chrom_pop[i].fitness = 4 * num_instructions;
+        for(int j = 0; j < num_instructions * 4; j++) {
+            if((chrom_pop[i].bin_arr[j] + '0') != perfect_indiv[j]){
+                chrom_pop[i].fitness -= 1;
+            }
+        }
+    }
 }
+
+void genetic_alg(Population* pop){
+    int flag = TRUE;
+    while(flag){
+        for(int i = 0; i < pop->size; i++){
+            
+        }
+    }    
+}   
 
 void initialize_population(Population* population, int chrom_size) {
     srand((unsigned) time(NULL));
@@ -89,8 +113,13 @@ void initialize_population(Population* population, int chrom_size) {
     int chromosome_size = population->chromosomes->size;
     for(int i = 0; i < population->size; i++){
         population->chromosomes[i].double_arr = malloc(sizeof(double) * chromosome_size);
+        population->chromosomes[i].bin_arr = malloc(sizeof(int) * chromosome_size);
         for(int j = 0; j < chromosome_size; j++){
             rand_val = (double)rand() / RAND_MAX;
+            if(rand_val > 0.5) 
+                population->chromosomes[i].bin_arr[j] = 1;
+            else 
+                population->chromosomes[i].bin_arr[j] = 0;
             population->chromosomes[i].double_arr[j] = rand_val;
         }
     }

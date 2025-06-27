@@ -10,22 +10,6 @@
 #define FALSE 0
 #define NUM_REG 4
 #define INPUTS 2
-typedef struct {
-    int* regA;
-    char name;
-}ptrRegA;
-typedef struct {
-    int* regB;
-    char name;
-}ptrRegB;
-typedef struct {
-    int* regC;
-    char name;
-}ptrRegC;
-typedef struct {
-    int* regD;
-    char name;
-}ptrRegD;
 
 
 typedef struct INSTRUCTION Instruction;
@@ -51,7 +35,7 @@ typedef struct EXPRESSION{
 typedef struct CHROMOSOME{
     double* double_arr; 
     int* bin_arr;
-    double fitness;
+    int fitness;
     int size; // Number of elements in the chromosome
 }Chromosome;
 
@@ -61,7 +45,7 @@ typedef struct POPULATION{
     int generation; // Current generation number
     double best_fitness; // Best fitness value in the population
     Chromosome best_chromosome; // Best chromosome in the population
-    Expression expression;
+    Expression* e; //Expression
 }Population;
 
 //================================Chromosome Instructions========================================
@@ -196,8 +180,7 @@ void initialize_population(Population* population, int chrom_size);
 /**
  * @brief Evaluates the fitness of each chromosome in the population.
  * @param population Pointer to the population structure.
- * @param validation_chrom Pointer to a chromosome used for validation.
  */
-void fitness_func(Population* population, Chromosome* validation_chrom); 
+void fitness_func(Population* population); 
 //================================GA Functions================================================
 #endif

@@ -21,7 +21,11 @@ void print_population(Population* population){
     for(int i = 0; i < population->size; i++){
         printf("%d chrom: ", i + 1);
         for(int j = 0; j < population->chromosomes->size; j++){
-            printf("%.3lf ", population->chromosomes[i].double_arr[j]);
+            printf("%.2lf ", population->chromosomes[i].double_arr[j]);
+        }
+        printf("\n");
+        for(int j = 0; j < population->chromosomes->size; j++){
+            printf("%2d ", population->chromosomes[i].bin_arr[j]);
         }
         printf("\n");
     }
@@ -142,19 +146,22 @@ Expression* generate_f1(){
 //F5: D = (A+B) - (B+C)
 
 int main(){
-    Chromosome* validation_chrom = NULL;//will be used to measure the fitness
-    Population population;
-    population.size = 10;
+    //Chromosome* validation_chrom = NULL;//will be used to measure the fitness
+    Population pop; //Initial population
+    pop.size = 10; 
     int chromosome_size = 16;
     //int is_memory_allocated;
-    population.chromosomes = malloc(sizeof(Chromosome) * population.size);
-    isMemoryAllocated(population.chromosomes);
-    initialize_population(&population, chromosome_size);
-    print_population(&population);
-    validation_chrom = generate_validation(chromosome_size);
-    print_chromosome(validation_chrom);
-    //genetic_alg(&population);
-    Expression* exp_f1 = generate_f1(); //sum, mov
+    pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
+    isMemoryAllocated(pop.chromosomes);
+    initialize_population(&pop, chromosome_size);
+    print_population(&pop);
+    //validation_chrom = generate_validation(chromosome_size);
+    //print_chromosome(validation_chrom);
+    pop.e = generate_f1(); //sum, mov
+    pop.e->result = pop.e->registers[0] + pop.e->registers[1];
+    printf("\nresult of expression is: %d\n", pop.e->result);
+    fitness_func(&pop);
+    genetic_alg(&pop);
     return 0;
 }
 
