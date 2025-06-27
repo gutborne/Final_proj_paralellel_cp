@@ -160,8 +160,8 @@ int main(){
     pop.e = generate_f1(); //sum, mov
     pop.e->result = pop.e->registers[0] + pop.e->registers[1];
     printf("\nresult of expression is: %d\n", pop.e->result);
-    fitness_func(&pop);
     genetic_alg(&pop);
+    //fitness_func(&pop);
     return 0;
 }
 

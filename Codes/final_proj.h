@@ -147,20 +147,22 @@ void double_to_bin(Chromosome* chromosome);
  * @brief Mutates a chromosome by applying random changes to its genes.
  * @param chromosome_n Pointer to the chromosome to be mutated.
  */
-void mutation(Chromosome* chromosome_n);
+void mutation(Chromosome* chromosome_n, int num_instructions);
 
 /**
  * @brief Performs crossover between two parent chromosomes to create two child chromosomes.
  * @param parent1 Pointer to the first parent chromosome.
  * @param parent2 Pointer to the second parent chromosome.
+ * @return a chromosome
  */
-void crossover(Chromosome* parent1, Chromosome* parent2);
+Chromosome crossover(Chromosome* parent1, Chromosome* parent2, int n_instructions);
 
 /**
- * @brief Performs selection on the population to choose the best chromosomes.
+ * @brief Prints the population of chromosomes.
  * @param population Pointer to the population structure.
+ * return a chromosome
  */
-void selection(Population* population);
+Chromosome selection(Population* population);
 
 /**
  * @brief Runs the genetic algorithm for a specified number of generations.
