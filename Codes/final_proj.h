@@ -11,7 +11,6 @@
 #define NUM_REG 4
 #define INPUTS 2
 
-
 typedef struct INSTRUCTION Instruction;
 typedef struct EXPRESSION Expression;
 typedef struct CHROMOSOME Chromosome;
@@ -43,7 +42,7 @@ typedef struct POPULATION{
     Chromosome* chromosomes; // Pointer to an array of chromosomes
     int size; // Number of chromosomes in the population
     int generation; // Current generation number
-    double best_fitness; // Best fitness value in the population
+    int best_fitness; // Best fitness value in the population
     Chromosome best_chromosome; // Best chromosome in the population
     Expression* e; //Expression
 }Population;

@@ -18,6 +18,7 @@ Instruction instruc_list[] = {
 }; 
 
 void print_population(Population* population){
+    
     for(int i = 0; i < population->size; i++){
         printf("%d chrom: ", i + 1);
         for(int j = 0; j < population->chromosomes->size; j++){
@@ -30,17 +31,7 @@ void print_population(Population* population){
         printf("\n");
     }
 }
-void print_chromosome(Chromosome* chrom){
-    printf("===============================================================Validation Chromosome===========================\n");
-    printf("Double_arr: ");
-    for(int i = 0; i < chrom->size; i++)
-        printf("%6.2lf", chrom->double_arr[i]);
-    printf("\n");
-    printf("Bin_arr: ");
-    for(int i = 0; i < chrom->size; i++)
-        printf("%6d", chrom->bin_arr[i]);
-    printf("\n===============================================================Validation Chromosome===========================\n");
-}
+
 
 void isMemoryAllocated(void* pointer){
     if(pointer != NULL){
@@ -146,9 +137,10 @@ Expression* generate_f1(){
 //F5: D = (A+B) - (B+C)
 
 int main(){
+    srand((unsigned)time(NULL));
     //Chromosome* validation_chrom = NULL;//will be used to measure the fitness
     Population pop; //Initial population
-    pop.size = 10; 
+    pop.size = 30; 
     int chromosome_size = 16;
     //int is_memory_allocated;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
