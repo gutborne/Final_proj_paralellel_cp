@@ -42,7 +42,6 @@ void isMemoryAllocated(void* pointer){
 }
 
 Chromosome* generate_validation(int chromosome_size){
-    srand((unsigned) time(NULL));
     Chromosome* validation_chrom = malloc(sizeof(Chromosome));
     validation_chrom->size = chromosome_size;
     isMemoryAllocated(validation_chrom);
@@ -140,7 +139,7 @@ int main(){
     srand((unsigned)time(NULL));
     //Chromosome* validation_chrom = NULL;//will be used to measure the fitness
     Population pop; //Initial population
-    pop.size = 20; 
+    pop.size = 30; 
     int chromosome_size = 16;
     //int is_memory_allocated;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);

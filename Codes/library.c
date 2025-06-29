@@ -81,6 +81,8 @@ Chromosome crossover(Chromosome* parent1, Chromosome* parent2, int n_instruction
     // a * 4 = 4a/2 = 2a
     // 1 0 1 0 0 0 0 0 
     // 1 1 1 1 0 1 0 1
+    child.fitness = 8;
+    child.size = parent1->size;
     if(parent1->fitness > parent2->fitness){
         for(int i = 0; i < parent1->size; i++){
             child.bin_arr[i] = parent1->bin_arr[i];   
@@ -101,19 +103,6 @@ Chromosome crossover(Chromosome* parent1, Chromosome* parent2, int n_instruction
         child.double_arr[j] = parent2->double_arr[j];
         j++;
     }
-    /*
-    if(parent1->fitness > parent2->fitness){
-        for(int i = 8; i < parent1->size; i++){
-            child.bin_arr[i] = parent1->bin_arr[i];
-            child.double_arr[i] = parent1->double_arr[i];
-        } 
-    }else{
-        for(int i = 8; i < parent1->size; i++){
-            child.bin_arr[i] = parent2->bin_arr[i];
-            child.double_arr[i] = parent2->double_arr[i];
-        } 
-    }
-    */
     return child;
     /*
     for(int i = 0; i < parent1->size; i++){
@@ -150,8 +139,10 @@ Chromosome selection(Population* pop){
     int max_pop = pop->size;
     int num_instructions = pop->e->num_instructions;
     int index_chosen_parent = rand() % max_pop; //index chosen parent(from 0 to 9)
-    while(pop->chromosomes[index_chosen_parent].fitness <= (2 * num_instructions)){
+    int attempts = 15;
+    while(pop->chromosomes[index_chosen_parent].fitness <= (2 * num_instructions) && attempts < 50){
         index_chosen_parent = rand() % max_pop;
+        attempts++;
     }
     printf("\nindex_parent: %d chosen_parent_fitness: %d \n", index_chosen_parent, pop->chromosomes[index_chosen_parent].fitness);
 
@@ -182,12 +173,11 @@ void print_pop_with_fitness(Population* population){
     for(int i = 0; i < population->chromosomes[i].size; i++){
         printf("%d ", population->best_chromosome.bin_arr[i]);
     }
-    printf("\nbest fitness: %d", population->best_fitness);
     printf("\n");
     for(int i = 0; i < population->chromosomes[i].size; i++){
         printf("%.2lf ", population->best_chromosome.double_arr[i]);
     }
-    printf("\n");
+    printf("\nbest fitness: %d\n", population->best_fitness);
 }
 void fitness_func(Population* pop){
     printf("inside fitness\n");
@@ -242,13 +232,13 @@ void print_chromosome(Chromosome* chrom){
 void genetic_alg(Population* pop){
     
     printf("inside genetic algorithm\n");
-    //int flag = TRUE;
+    int flag = TRUE;
     //Chromosome* new_pop = malloc(sizeof(Chromosome) * pop->size);
     //printf("\naddress of new_pop before the while: %p", new_pop);
     //double crossover_rate = (double)rand()/RAND_MAX;
     double mutation_rate = (double)rand()/RAND_MAX;
     pop->generation = 1;
-    while(pop->generation < 100){
+    while(pop->generation < 50 && flag == TRUE){
         /*
         if(pop->generation > 1){ 
             
@@ -262,17 +252,15 @@ void genetic_alg(Population* pop){
         if(pop->best_fitness == 4 * pop->e->num_instructions){
             printf("\n A perfect chromosome was found in the %d generation!!\n", pop->generation);
             print_chromosome(&pop->best_chromosome);
-            //flag = FALSE;
+            flag = FALSE;
         }else{
             Chromosome parents[2]; 
             for(int i = 0; i < pop->size; i++){
                 printf("parent 1\n");
-                Chromosome parent1 = selection(pop);
-                parents[0] = parent1;
+                parents[0] = selection(pop);
                 print_chromosome(&parents[0]);
                 printf("parent 2\n");
-                Chromosome parent2 = selection(pop);
-                parents[1] = parent2;
+                parents[1] = selection(pop);
                 print_chromosome(&parents[1]);
                 //crossover_rate = (double)rand()/RAND_MAX;
                 pop->chromosomes[i] = crossover(&parents[0], &parents[1], pop->e->num_instructions);
@@ -296,6 +284,7 @@ void initialize_population(Population* population, int chrom_size) {
         population->chromosomes[i].double_arr = malloc(sizeof(double) * chromosome_size);
         population->chromosomes[i].bin_arr = malloc(sizeof(int) * chromosome_size);
         population->chromosomes[i].size = chromosome_size;
+        //population->chromosomes[i].fitness = 4 * population->e->num_instructions;
         for(int j = 0; j < chromosome_size; j++){
             rand_val = (double)rand() / RAND_MAX;
             if(rand_val > 0.5) 
