@@ -140,7 +140,7 @@ int main(){
     srand((unsigned)time(NULL));
     //Chromosome* validation_chrom = NULL;//will be used to measure the fitness
     Population pop; //Initial population
-    pop.size = 30; 
+    pop.size = 20; 
     int chromosome_size = 16;
     //int is_memory_allocated;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
