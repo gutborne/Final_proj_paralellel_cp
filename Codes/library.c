@@ -1,6 +1,7 @@
 #include "final_proj.h"
 
 //================================Chromosome Instructions========================================
+/*
 Instruction instructions[] = {
     {"add", add, "0000"},
     {"sub", sub, "0001"},
@@ -13,6 +14,7 @@ Instruction instructions[] = {
     {"module", module, "1000"},
     {"and_function", and_function, "1001"}
 }; 
+*/
 
 int add(int regA, int regB){
     return regA + regB;

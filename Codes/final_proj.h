@@ -9,7 +9,8 @@
 #define TRUE 1
 #define FALSE 0
 #define NUM_REG 4
-#define INPUTS 2
+#define NUM_INPUTS 2
+#define NUM_BITS 4
 
 typedef struct INSTRUCTION Instruction;
 typedef struct EXPRESSION Expression;

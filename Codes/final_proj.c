@@ -10,11 +10,9 @@ Instruction instruc_list[] = {
     {"mult", mult, "0010"},
     {"mov", mov, "0011"},
     {"increment", increment, "0100"},
-    {"decrement", decrement, "0101"},
-    {"greater_than", greater_than, "0110"},
-    {"less_than", less_than, "0111"},
-    {"module", module, "1000"},
-    {"and_function", and_function, "1001"}
+    {"greater_than", greater_than, "0101"},
+    {"module", module, "0111"},
+    {"and_function", and_function, "1000"}
 }; 
 
 void print_population(Population* population){
@@ -64,7 +62,7 @@ int count_instructions(){
 
 void print_instruc_arr(Instruction* i, int limit){
     for(int j = 0; j < limit; j++){
-        printf("Instruction %d -> name: %s | code: %s\n", j + 1, i[j].name, i[j].code);
+        printf("Instruction %d -> name: %s | code: %s ptr_func: %p\n", j + 1, i[j].name, i[j].code, i->ptr_to_func);
     }
 }
 void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
@@ -77,6 +75,7 @@ void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
         if(strcmp(instruc_list[i].name, instruc_input[index]) == 0){
             exp->Instruc_arr[index].name = instruc_list[i].name;
             exp->Instruc_arr[index].code = instruc_list[i].code;
+            exp->Instruc_arr[index].ptr_to_func = instruc_list[i].ptr_to_func;
             index++;
         }
     }
@@ -110,16 +109,15 @@ Expression* generate_f1(){
     exp->num_instructions = count_instructions();
     exp->registers = malloc(sizeof(int) * NUM_REG);
     isMemoryAllocated(exp->registers);
-    populate_registers(exp->registers, 2, 3, 4, 0); //A, B, C, D
     populate_instruc_arr(exp, ptr_f1);
     //sum
-    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * INPUTS);
+    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
     exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
     exp->Instruc_arr[0].output_reg = &exp->registers[0];
     
     //mov
-    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * INPUTS);
+    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[0] = regA
     exp->Instruc_arr[1].input_regs[1] = &exp->registers[1]; //registers[1] = regB
     exp->Instruc_arr[1].output_reg = &exp->registers[3];
@@ -137,21 +135,76 @@ Expression* generate_f1(){
 
 int main(){
     srand((unsigned)time(NULL));
-    //Chromosome* validation_chrom = NULL;//will be used to measure the fitness
     Population pop; //Initial population
     pop.size = 50; 
-    int chromosome_size = 16;
-    //int is_memory_allocated;
+    int chromosome_size;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
     isMemoryAllocated(pop.chromosomes);
-    initialize_population(&pop, chromosome_size);
-    print_population(&pop);
-    //validation_chrom = generate_validation(chromosome_size);
-    //print_chromosome(validation_chrom);
-    pop.e = generate_f1(); //sum, mov
-    pop.e->result = pop.e->registers[0] + pop.e->registers[1];
-    printf("\nresult of expression is: %d\n", pop.e->result);
-    genetic_alg(&pop);
+    printf("\n======================================================================================\n");
+    printf("                            CHOOSE AN OPTION OF BENCHAMARK\n");
+    printf("======================================================================================\n");
+    int answer = 1;
+    switch(answer){
+        case 1:
+            chromosome_size = 16;
+            initialize_population(&pop, chromosome_size);
+            print_population(&pop);
+            pop.e = generate_f1(); //sum, mov
+            int num_instructions = pop.e->num_instructions;
+            genetic_alg(&pop);
+            populate_registers(pop.e->registers, 2, 3, 4, 0); //A, B, C, D
+            char* chrom_benchmark = malloc(sizeof(char) * (num_instructions * NUM_BITS+1));
+            int index_chrom = 0;
+            for(int i = 0; i < num_instructions; i++){
+                for(int j = 0; j < NUM_BITS; j++){
+                    chrom_benchmark[index_chrom] = pop.e->Instruc_arr[i].code[j];
+                    index_chrom++;
+                }
+            }
+            chrom_benchmark[index_chrom] = '\0';
+            //printf("%s\n", chrom_benchmark);
+            for(int i = 0; i < num_instructions * NUM_BITS; ){
+                if(chrom_benchmark[i] == pop.best_chromosome.bin_arr[i] + '0'){
+                    i++;
+                }else{
+                    printf("not equal!\n");
+                    break;
+                }
+            }
+            printf("Equal!\n");
+            Expression* exp = pop.e;
+            int* input1;
+            int* input2;
+            for(int i = 0; i < num_instructions; i++){
+                input1 = exp->Instruc_arr[i].input_regs[0];
+                printf("&input1: %p *input1: %d\n", exp->Instruc_arr[i].input_regs[0], *exp->Instruc_arr[i].input_regs[0]);
+                input2 = exp->Instruc_arr[i].input_regs[1];
+                printf("&input2: %p *input2: %d\n", exp->Instruc_arr[i].input_regs[1], *exp->Instruc_arr[i].input_regs[1]);
+                *(exp->Instruc_arr[i].output_reg) = exp->Instruc_arr[i].ptr_to_func(*input1, *input2);
+                printf("output[%d]: %p *output[%d]: %d\n", i, exp->Instruc_arr[i].output_reg, i, *(exp->Instruc_arr[i].output_reg));
+            }
+            printf("\nthe result of expression is: %d", *exp->Instruc_arr[1].output_reg);
+            break;
+        case 2:
+            chromosome_size = 16;
+            initialize_population(&pop, chromosome_size);
+            genetic_alg(&pop);
+            break;
+        case 3:
+            chromosome_size = 16;
+            initialize_population(&pop, chromosome_size);
+            genetic_alg(&pop);
+            break;
+        case 4:
+            genetic_alg(&pop);
+            initialize_population(&pop, chromosome_size);
+            break;
+        case 5:
+            genetic_alg(&pop);
+            initialize_population(&pop, chromosome_size);
+            break;
+        case 6:
+    }
     return 0;
 }
 
