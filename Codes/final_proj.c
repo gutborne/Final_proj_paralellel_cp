@@ -139,7 +139,7 @@ int main(){
     srand((unsigned)time(NULL));
     //Chromosome* validation_chrom = NULL;//will be used to measure the fitness
     Population pop; //Initial population
-    pop.size = 30; 
+    pop.size = 50; 
     int chromosome_size = 16;
     //int is_memory_allocated;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
@@ -152,7 +152,6 @@ int main(){
     pop.e->result = pop.e->registers[0] + pop.e->registers[1];
     printf("\nresult of expression is: %d\n", pop.e->result);
     genetic_alg(&pop);
-    //fitness_func(&pop);
     return 0;
 }
 
