@@ -127,11 +127,13 @@ Chromosome helper_selection(Chromosome chosen_chrom, int size_chrom){
     new_chrom.bin_arr = malloc(sizeof(int) * size_chrom);
     new_chrom.double_arr = malloc(sizeof(double) * size_chrom);
     new_chrom.fitness = chosen_chrom.fitness;
+    printf("\nfitness: %d\n", new_chrom.fitness);
     new_chrom.size = size_chrom;
     for(int i = 0; i < size_chrom; i++){
         new_chrom.bin_arr[i] = chosen_chrom.bin_arr[i];
         new_chrom.double_arr[i] = chosen_chrom.double_arr[i];
     }
+    printf("ending of the helper_selection\n");
     return new_chrom;
 }
 
@@ -265,7 +267,7 @@ void genetic_alg(Population* pop){
                 //crossover_rate = (double)rand()/RAND_MAX;
                 pop->chromosomes[i] = crossover(&parents[0], &parents[1], pop->e->num_instructions);
                 mutation_rate = (double)rand()/RAND_MAX;
-                if(mutation_rate > 0.1 && mutation_rate < 0.3){
+                if(mutation_rate > 0.1 && mutation_rate < 0.7){
                     mutation(&pop->chromosomes[i], pop->e->num_instructions);
                 }
             }
@@ -284,7 +286,6 @@ void initialize_population(Population* population, int chrom_size) {
         population->chromosomes[i].double_arr = malloc(sizeof(double) * chromosome_size);
         population->chromosomes[i].bin_arr = malloc(sizeof(int) * chromosome_size);
         population->chromosomes[i].size = chromosome_size;
-        //population->chromosomes[i].fitness = 4 * population->e->num_instructions;
         for(int j = 0; j < chromosome_size; j++){
             rand_val = (double)rand() / RAND_MAX;
             if(rand_val > 0.5) 
