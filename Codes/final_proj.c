@@ -3,6 +3,7 @@
 
 //F1: D = A + B
 const char* f1[2] = {"add", "mov"};
+const char* f2[2] = {"module", "mov"};
 
 Instruction instruc_list[] = {
     {"add", add, "0000"},
@@ -39,23 +40,14 @@ void isMemoryAllocated(void* pointer){
     }
 }
 
-Chromosome* generate_validation(int chromosome_size){
-    Chromosome* validation_chrom = malloc(sizeof(Chromosome));
-    validation_chrom->size = chromosome_size;
-    isMemoryAllocated(validation_chrom);
-    validation_chrom->double_arr = malloc(sizeof(double)*chromosome_size);
-    validation_chrom->bin_arr = malloc(sizeof(int)*chromosome_size);
-    isMemoryAllocated(validation_chrom->double_arr);
-    isMemoryAllocated(validation_chrom->bin_arr);
-    for(int i = 0; i < chromosome_size; i++){
-        validation_chrom->double_arr[i] = (double) rand() / RAND_MAX;
-    }
-    double_to_bin(validation_chrom);
-    return validation_chrom;
-}
 
-int count_instructions(){ 
+int count_instructionsf1(){ 
     int number_instructions = sizeof(f1)/sizeof(f1[0]);
+    printf("\nnumber of instructions: %d\n", number_instructions);
+    return number_instructions;
+}
+int count_instructionsf2(){ 
+    int number_instructions = sizeof(f2)/sizeof(f2[0]);
     printf("\nnumber of instructions: %d\n", number_instructions);
     return number_instructions;
 }
@@ -70,13 +62,15 @@ void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
     exp->Instruc_arr = malloc(sizeof(Instruction) * limit);
     isMemoryAllocated(exp->Instruc_arr);
     int index = 0;
-    for(int i = 0; i < 10; i++){
-        if(index == limit){ break; }
-        if(strcmp(instruc_list[i].name, instruc_input[index]) == 0){
-            exp->Instruc_arr[index].name = instruc_list[i].name;
-            exp->Instruc_arr[index].code = instruc_list[i].code;
-            exp->Instruc_arr[index].ptr_to_func = instruc_list[i].ptr_to_func;
-            index++;
+    while(index < limit){
+        for(int i = 0; i < 8; i++){ //dont forget
+            if(strcmp(instruc_list[i].name, instruc_input[index]) == 0){
+                exp->Instruc_arr[index].name = instruc_list[i].name;
+                exp->Instruc_arr[index].code = instruc_list[i].code;
+                exp->Instruc_arr[index].ptr_to_func = instruc_list[i].ptr_to_func;
+                index++;
+                break;
+            }
         }
     }
     print_instruc_arr(exp->Instruc_arr, limit);
@@ -106,7 +100,7 @@ Expression* generate_f1(){
     const char** ptr_f1 = f1;
     Expression* exp = malloc(sizeof(Expression));
     isMemoryAllocated(exp);
-    exp->num_instructions = count_instructions();
+    exp->num_instructions = count_instructionsf1();
     exp->registers = malloc(sizeof(int) * NUM_REG);
     isMemoryAllocated(exp->registers);
     populate_instruc_arr(exp, ptr_f1);
@@ -125,6 +119,72 @@ Expression* generate_f1(){
     return exp;
 }
 
+
+//F2: D = A % B
+//f2[2] = {"module", "mov"};
+Expression* generate_f2(){
+    //sum, mov 
+    printf("\nInside generate_f2\n");
+    const char** ptr_f2 = f2;
+    Expression* exp = malloc(sizeof(Expression));
+    isMemoryAllocated(exp);
+    exp->num_instructions = count_instructionsf2();
+    exp->registers = malloc(sizeof(int) * NUM_REG);
+    isMemoryAllocated(exp->registers);
+    populate_instruc_arr(exp, ptr_f2);
+    //mod
+    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
+    exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
+    exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
+    exp->Instruc_arr[0].output_reg = &exp->registers[0];
+    
+    //mov
+    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
+    exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[0] = regA
+    exp->Instruc_arr[1].input_regs[1] = &exp->registers[1]; //registers[1] = regB
+    exp->Instruc_arr[1].output_reg = &exp->registers[3];
+    print_registers_address(exp->Instruc_arr, exp->num_instructions);
+    return exp;
+}
+int check_best_chrom(Population* p){
+    int num_instructions = p->e->num_instructions;
+    char* chrom_benchmark = malloc(sizeof(char) * (num_instructions * NUM_BITS+1));
+    int index_chrom = 0;
+    for(int i = 0; i < num_instructions; i++){
+        for(int j = 0; j < NUM_BITS; j++){
+            chrom_benchmark[index_chrom] = p->e->Instruc_arr[i].code[j];
+            index_chrom++;
+        }
+    }
+    chrom_benchmark[index_chrom] = '\0';
+    //printf("%s\n", chrom_benchmark);
+    for(int i = 0; i < num_instructions * NUM_BITS; ){
+        if(chrom_benchmark[i] == p->best_chromosome.bin_arr[i] + '0'){
+            i++;
+        }else{
+            printf("not equal!\n");
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
+void test_benchmark_with_values(Population* pop, int* results, int i){
+    printf("Really, this is the best chrom!\n");    
+    Expression* exp = pop->e;
+    int num_instructions = pop->e->num_instructions;
+    int* input1;
+    int* input2;
+    for(int i = 0; i < num_instructions; i++){
+        input1 = exp->Instruc_arr[i].input_regs[0];
+        printf("&input1: %p *input1: %d\n", exp->Instruc_arr[i].input_regs[0], *exp->Instruc_arr[i].input_regs[0]);
+        input2 = exp->Instruc_arr[i].input_regs[1];
+        printf("&input2: %p *input2: %d\n", exp->Instruc_arr[i].input_regs[1], *exp->Instruc_arr[i].input_regs[1]);
+        *(exp->Instruc_arr[i].output_reg) = exp->Instruc_arr[i].ptr_to_func(*input1, *input2);
+        printf("output[%d]: %p *output[%d]: %d\n", i, exp->Instruc_arr[i].output_reg, i, *(exp->Instruc_arr[i].output_reg));
+    }
+    results[i] = *exp->Instruc_arr[1].output_reg;
+    printf("\nthe result of expression is: %d", *exp->Instruc_arr[1].output_reg);
+}
 //F2: D = IF (A+B > C) THEN 1
 
 //F3: D = A % B 
@@ -136,74 +196,62 @@ Expression* generate_f1(){
 int main(){
     srand((unsigned)time(NULL));
     Population pop; //Initial population
-    pop.size = 50; 
+    pop.size = 70; 
     int chromosome_size;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
     isMemoryAllocated(pop.chromosomes);
     printf("\n======================================================================================\n");
     printf("                            CHOOSE AN OPTION OF BENCHAMARK\n");
     printf("======================================================================================\n");
-    int answer = 1;
+    int answer = 2;
+    int num_instructions = 0;
+    int isBestChrom = 0;
+    int values_to_regA[] = {10, 3, 7, 9, 17, 78};
+    int values_to_regB[] = {1, 36, 2, 9, 12, 2};
+    int results[6]; 
     switch(answer){
         case 1:
             chromosome_size = 16;
             initialize_population(&pop, chromosome_size);
             print_population(&pop);
             pop.e = generate_f1(); //sum, mov
-            int num_instructions = pop.e->num_instructions;
+            num_instructions = pop.e->num_instructions;
             genetic_alg(&pop);
-            populate_registers(pop.e->registers, 2, 3, 4, 0); //A, B, C, D
-            char* chrom_benchmark = malloc(sizeof(char) * (num_instructions * NUM_BITS+1));
-            int index_chrom = 0;
-            for(int i = 0; i < num_instructions; i++){
-                for(int j = 0; j < NUM_BITS; j++){
-                    chrom_benchmark[index_chrom] = pop.e->Instruc_arr[i].code[j];
-                    index_chrom++;
+            isBestChrom = check_best_chrom(&pop);
+            if(isBestChrom){
+                for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
+                    populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
+                    test_benchmark_with_values(&pop, results, i);
                 }
-            }
-            chrom_benchmark[index_chrom] = '\0';
-            //printf("%s\n", chrom_benchmark);
-            for(int i = 0; i < num_instructions * NUM_BITS; ){
-                if(chrom_benchmark[i] == pop.best_chromosome.bin_arr[i] + '0'){
-                    i++;
-                }else{
-                    printf("not equal!\n");
-                    break;
+                for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
+                    printf("\nresults[%d]: %d ", i,  results[i]);
                 }
+                
+            }else{
+                printf("Not equal! Not the best chrom!\n");
             }
-            printf("Equal!\n");
-            Expression* exp = pop.e;
-            int* input1;
-            int* input2;
-            for(int i = 0; i < num_instructions; i++){
-                input1 = exp->Instruc_arr[i].input_regs[0];
-                printf("&input1: %p *input1: %d\n", exp->Instruc_arr[i].input_regs[0], *exp->Instruc_arr[i].input_regs[0]);
-                input2 = exp->Instruc_arr[i].input_regs[1];
-                printf("&input2: %p *input2: %d\n", exp->Instruc_arr[i].input_regs[1], *exp->Instruc_arr[i].input_regs[1]);
-                *(exp->Instruc_arr[i].output_reg) = exp->Instruc_arr[i].ptr_to_func(*input1, *input2);
-                printf("output[%d]: %p *output[%d]: %d\n", i, exp->Instruc_arr[i].output_reg, i, *(exp->Instruc_arr[i].output_reg));
-            }
-            printf("\nthe result of expression is: %d", *exp->Instruc_arr[1].output_reg);
             break;
         case 2:
             chromosome_size = 16;
             initialize_population(&pop, chromosome_size);
+            print_population(&pop);
+            pop.e = generate_f2(); //mod, mov
+            num_instructions = pop.e->num_instructions;
             genetic_alg(&pop);
+            populate_registers(pop.e->registers, 10, 3, 4, 0); //A, B, C, D
+            isBestChrom = check_best_chrom(&pop);
+            if(isBestChrom){
+                for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
+                    populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
+                    test_benchmark_with_values(&pop, results, i);
+                }
+                for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
+                    printf("\nresults[%d]: %d ", i,  results[i]);
+                }
+            }else{
+                printf("Not equal! Not the best chrom!\n");
+            }
             break;
-        case 3:
-            chromosome_size = 16;
-            initialize_population(&pop, chromosome_size);
-            genetic_alg(&pop);
-            break;
-        case 4:
-            genetic_alg(&pop);
-            initialize_population(&pop, chromosome_size);
-            break;
-        case 5:
-            genetic_alg(&pop);
-            initialize_population(&pop, chromosome_size);
-            break;
-        case 6:
     }
     return 0;
 }
