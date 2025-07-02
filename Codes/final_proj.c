@@ -1,8 +1,10 @@
 #include "final_proj.h"
 #include <mpi.h>
+#include <locale.h>
 
 //F1: D = A + B
 const char* f1[2] = {"add", "mov"};
+//F2: D = A % B
 const char* f2[2] = {"module", "mov"};
 
 Instruction instruc_list[] = {
@@ -78,9 +80,11 @@ void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
 
 void populate_registers(int* registers, int A, int B, int C, int D){
     registers[0] = A, registers[1] = B, registers[2] = C, registers[3] = D;
+    /*
     for(int i = 0; i < NUM_REG; i++){
         printf("&register[%d] = %p\n", i + 1, registers + i);
     }
+    */
 }
 
 void print_registers_address(Instruction* Instruc_arr, int num_instructions){
@@ -124,7 +128,6 @@ Expression* generate_f1(){
 //f2[2] = {"module", "mov"};
 Expression* generate_f2(){
     //sum, mov 
-    printf("\nInside generate_f2\n");
     const char** ptr_f2 = f2;
     Expression* exp = malloc(sizeof(Expression));
     isMemoryAllocated(exp);
@@ -168,22 +171,24 @@ int check_best_chrom(Population* p){
     }
     return TRUE;
 }
-void test_benchmark_with_values(Population* pop, int* results, int i){
-    printf("Really, this is the best chrom!\n");    
+void test_benchmark_with_values(Population* pop, int correct_answer){
     Expression* exp = pop->e;
     int num_instructions = pop->e->num_instructions;
     int* input1;
     int* input2;
+    char *is_correct = NULL;
     for(int i = 0; i < num_instructions; i++){
         input1 = exp->Instruc_arr[i].input_regs[0];
-        printf("&input1: %p *input1: %d\n", exp->Instruc_arr[i].input_regs[0], *exp->Instruc_arr[i].input_regs[0]);
+        //printf("&input1: %p *input1: %d\n", exp->Instruc_arr[i].input_regs[0], *exp->Instruc_arr[i].input_regs[0]);
         input2 = exp->Instruc_arr[i].input_regs[1];
-        printf("&input2: %p *input2: %d\n", exp->Instruc_arr[i].input_regs[1], *exp->Instruc_arr[i].input_regs[1]);
+        //printf("&input2: %p *input2: %d\n", exp->Instruc_arr[i].input_regs[1], *exp->Instruc_arr[i].input_regs[1]);
         *(exp->Instruc_arr[i].output_reg) = exp->Instruc_arr[i].ptr_to_func(*input1, *input2);
-        printf("output[%d]: %p *output[%d]: %d\n", i, exp->Instruc_arr[i].output_reg, i, *(exp->Instruc_arr[i].output_reg));
+        //printf("output[%d]: %p *output[%d]: %d\n", i, exp->Instruc_arr[i].output_reg, i, *(exp->Instruc_arr[i].output_reg));
     }
-    results[i] = *exp->Instruc_arr[1].output_reg;
-    printf("\nthe result of expression is: %d", *exp->Instruc_arr[1].output_reg);
+    //is_correct = (*exp->Instruc_arr[i].output_reg == correct_answer)? "correct": "incorrect";
+    if(exp->registers[3] == correct_answer) is_correct = "correct";
+    else "incorrect";
+    printf("        %d                     |         %d            |       %s    \n", correct_answer, *exp->Instruc_arr[1].output_reg, is_correct);
 }
 //F2: D = IF (A+B > C) THEN 1
 
@@ -194,23 +199,27 @@ void test_benchmark_with_values(Population* pop, int* results, int i){
 //F5: D = (A+B) - (B+C)
 
 int main(){
+    setlocale(LC_ALL, "");
     srand((unsigned)time(NULL));
     Population pop; //Initial population
     pop.size = 70; 
+    pop.generation = 1;
     int chromosome_size;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
     isMemoryAllocated(pop.chromosomes);
     printf("\n======================================================================================\n");
     printf("                            CHOOSE AN OPTION OF BENCHAMARK\n");
     printf("======================================================================================\n");
-    int answer = 2;
+    int answer = 1;
     int num_instructions = 0;
+    int correct_answer = 0;
     int isBestChrom = 0;
-    int values_to_regA[] = {10, 3, 7, 9, 17, 78};
-    int values_to_regB[] = {1, 36, 2, 9, 12, 2};
-    int results[6]; 
+    int values_to_regA[] = {10, 3, 10, 9, 17, 32, 40, 54, 23, 11};
+    int values_to_regB[] = {15, 36, 2, 9, 12, 24, 54, 23, 11, 7};
+    char* exp_string  = NULL; 
     switch(answer){
         case 1:
+            exp_string = "D = A + B"; //expression
             chromosome_size = 16;
             initialize_population(&pop, chromosome_size);
             print_population(&pop);
@@ -219,14 +228,12 @@ int main(){
             genetic_alg(&pop);
             isBestChrom = check_best_chrom(&pop);
             if(isBestChrom){
+                printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
                 for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
                     populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
-                    test_benchmark_with_values(&pop, results, i);
+                    correct_answer = values_to_regA[i] + values_to_regB[i];
+                    test_benchmark_with_values(&pop, correct_answer);
                 }
-                for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
-                    printf("\nresults[%d]: %d ", i,  results[i]);
-                }
-                
             }else{
                 printf("Not equal! Not the best chrom!\n");
             }
@@ -238,15 +245,11 @@ int main(){
             pop.e = generate_f2(); //mod, mov
             num_instructions = pop.e->num_instructions;
             genetic_alg(&pop);
-            populate_registers(pop.e->registers, 10, 3, 4, 0); //A, B, C, D
             isBestChrom = check_best_chrom(&pop);
             if(isBestChrom){
                 for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
                     populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
-                    test_benchmark_with_values(&pop, results, i);
-                }
-                for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
-                    printf("\nresults[%d]: %d ", i,  results[i]);
+                    //test_benchmark_with_values(&pop, results, i);
                 }
             }else{
                 printf("Not equal! Not the best chrom!\n");
