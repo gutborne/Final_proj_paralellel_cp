@@ -171,12 +171,53 @@ int check_best_chrom(Population* p){
     }
     return TRUE;
 }
-void test_benchmark_with_values(Population* pop, int correct_answer){
+void helper_fill_exp_str_with_vals(char* aux_exp_str, int reg, int* ptr_j){
+    //printf("inside helper_fill_exp_str_with_vals\n");
+    char str[10];
+    sprintf(str, "%d", reg);
+    //printf("str: %s\n", str);
+    int i = 0;
+    //printf("before while -> i: %d j: %d\n", i, *ptr_j);
+    while(str[i] != '\0'){
+        aux_exp_str[*ptr_j] = str[i];
+        i++;
+        (*ptr_j)++; 
+        //printf("i: %d j: %d\n", i, *ptr_j);
+    }
+    aux_exp_str[*ptr_j] = '\0';
+    //printf("aux_exp_str: %s\n", aux_exp_str);
+}
+char* fill_exp_str_with_vals(char* exp_string, int regA, int regB, int regC, int regD){
+    //printf("inside fill function\n");
+    int i = 0, size = 0, j = 0;
+    int* ptr_j = &j;
+    while(exp_string[i] != '\0'){ size++; i++; }
+    char* aux_exp_str = malloc(sizeof(char) * (size * 20));
+    i = 0; 
+    while(exp_string[i] != '\0'){
+        if(exp_string[i] != 'A' && exp_string[i] != 'B' &&  exp_string[i] != 'C'  && exp_string[i] != 'D'){
+            aux_exp_str[j] = exp_string[i];
+            i++; 
+            j++;
+            continue;
+        }
+        if(exp_string[i] == 'A') helper_fill_exp_str_with_vals(aux_exp_str, regA, &j);
+        if(exp_string[i] == 'B') helper_fill_exp_str_with_vals(aux_exp_str, regB, &j); 
+        if(exp_string[i] == 'C') helper_fill_exp_str_with_vals(aux_exp_str, regC, &j);
+        if(exp_string[i] == 'D') helper_fill_exp_str_with_vals(aux_exp_str, regD, &j); 
+        i++;
+    }
+    aux_exp_str[j] = '\0';
+    //printf("%s\n", aux_exp_str);
+    return aux_exp_str;
+}
+void test_benchmark_with_values(Population* pop, int correct_answer, int regA, int regB, int regC, char* exp_string){
     Expression* exp = pop->e;
     int num_instructions = pop->e->num_instructions;
     int* input1;
     int* input2;
     char *is_correct = NULL;
+    char* exp_string_with_values = NULL;
     for(int i = 0; i < num_instructions; i++){
         input1 = exp->Instruc_arr[i].input_regs[0];
         //printf("&input1: %p *input1: %d\n", exp->Instruc_arr[i].input_regs[0], *exp->Instruc_arr[i].input_regs[0]);
@@ -188,7 +229,8 @@ void test_benchmark_with_values(Population* pop, int correct_answer){
     //is_correct = (*exp->Instruc_arr[i].output_reg == correct_answer)? "correct": "incorrect";
     if(exp->registers[3] == correct_answer) is_correct = "correct";
     else "incorrect";
-    printf("        %d                     |         %d            |       %s    \n", correct_answer, *exp->Instruc_arr[1].output_reg, is_correct);
+    exp_string_with_values = fill_exp_str_with_vals(exp_string, regA, regB, regC, correct_answer);
+    printf("      %s                  |         %d            |       %s    \n", exp_string_with_values, exp->registers[3], is_correct);
 }
 //F2: D = IF (A+B > C) THEN 1
 
@@ -216,6 +258,7 @@ int main(){
     int isBestChrom = 0;
     int values_to_regA[] = {10, 3, 10, 9, 17, 32, 40, 54, 23, 11};
     int values_to_regB[] = {15, 36, 2, 9, 12, 24, 54, 23, 11, 7};
+    int regA = 0, regB = 0, regC = 0;
     char* exp_string  = NULL; 
     switch(answer){
         case 1:
@@ -232,7 +275,9 @@ int main(){
                 for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
                     populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
                     correct_answer = values_to_regA[i] + values_to_regB[i];
-                    test_benchmark_with_values(&pop, correct_answer);
+                    regA = values_to_regA[i];
+                    regB = values_to_regB[i];
+                    test_benchmark_with_values(&pop, correct_answer, regA, regB, 0, exp_string);
                 }
             }else{
                 printf("Not equal! Not the best chrom!\n");

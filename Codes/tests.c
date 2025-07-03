@@ -60,6 +60,12 @@ int main(){
     int* ptr_var = &var;
     if(&var == ptr_var)
         printf("\nvar: %p ptr_var: %p\n", &var, ptr_var);
-
+    char* exp_new = "abc";
+    for(int i = 0; i < 3; i++){
+        if(exp_new[i] == 'a'){
+            exp_new[i] = '1';
+        }
+    }
+    printf("\n%s\n", exp_new);
     return 0;
 }
