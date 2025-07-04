@@ -133,6 +133,15 @@ int module(int regA, int regB);
  * @return int 
  */
 int and_function(int regA, int regB);
+
+
+/**
+ * @brief this function checks if regA is equal to 1 or 0
+ * @param regA int value
+ * @param regB int value just for maintenance of the signature
+ * @return int 
+ */
+int if_function(int regA, int regB);
 //================================Chromosome Instructions========================================
 
 //================================GA Functions================================================

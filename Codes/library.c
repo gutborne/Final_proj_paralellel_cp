@@ -42,6 +42,10 @@ int and_function(int regA, int regB){
     int result = (regA == 1 && regB == 1)? 1: 0;
     return result;
 }
+
+int if_function(int regA, int regB){
+    return (regA == 1)? TRUE: FALSE;
+}
 //================================Chromosome Instructions========================================
 
 //================================GA Functions================================================
@@ -184,9 +188,9 @@ void genetic_alg(Population* pop){
     int flag = TRUE;
     double mutation_rate = (double)rand()/RAND_MAX;
     pop->generation = 1;
-    while(pop->generation < 20 && flag == TRUE){
+    while(pop->generation < 40 && flag == TRUE){
         fitness_func(pop);
-        print_pop_with_fitness(pop);
+        //print_pop_with_fitness(pop);
         if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
             printf("\nPERFECT CHROMOSOME FOUND AT %dth GENERATION!\n", pop->generation);
             print_chromosome(&pop->best_chromosome);
