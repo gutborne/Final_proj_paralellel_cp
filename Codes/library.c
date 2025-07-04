@@ -188,7 +188,7 @@ void genetic_alg(Population* pop){
     int flag = TRUE;
     double mutation_rate = (double)rand()/RAND_MAX;
     pop->generation = 1;
-    while(pop->generation < 40 && flag == TRUE){
+    while(pop->generation < 100 && flag == TRUE){
         fitness_func(pop);
         //print_pop_with_fitness(pop);
         if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){

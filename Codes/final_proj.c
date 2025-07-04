@@ -8,8 +8,7 @@ const char* f1[2] = {"add", "mov"};
 const char* f2[2] = {"module", "mov"};
 //F3: D = (A + B) - (B + C)
 const char* f3[4] = {"add", "add", "sub", "mov"};
-
-//F$: D = IF(A + B > C) THEN 1 ELSE 0
+//F4: D = IF(A + B > C) THEN 1 ELSE 0
 const char* f4[4] = {"add", "greater_than", "if_function", "mov"};
 
 /// @brief dont forget to create a function to count how many elements we have at runtime
@@ -67,6 +66,12 @@ int count_instructionsf3(){
     return number_instructions;
 }
 
+int count_instructionsf4(){ 
+    int number_instructions = sizeof(f4)/sizeof(f4[0]);
+    printf("\nnumber of instructions: %d\n", number_instructions);
+    return number_instructions;
+}
+
 void print_instruc_arr(Instruction* i, int limit){
     for(int j = 0; j < limit; j++){
         printf("Instruction %d -> name: %s | code: %s ptr_func: %p\n", j + 1, i[j].name, i[j].code, i->ptr_to_func);
@@ -79,7 +84,7 @@ void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
     int index = 0;
     while(index < limit){
         //dont forget to create a function to count how many elements has instruc_list[] 
-        for(int i = 0; i < 8; i++){// 8 is the current number of elements of instruc_list[]
+        for(int i = 0; i < 9; i++){// 8 is the current number of elements of instruc_list[]
             if(strcmp(instruc_list[i].name, instruc_input[index]) == 0){
                 exp->Instruc_arr[index].name = instruc_list[i].name;
                 exp->Instruc_arr[index].code = instruc_list[i].code;
@@ -202,6 +207,45 @@ Expression* generate_f3(){
     print_registers_address(exp->Instruc_arr, exp->num_instructions);
     return exp;
 }
+
+
+Expression* generate_f4(){
+    printf("\nInside generate_f4\n");
+    const char** ptr_f4 = f4;
+    Expression* exp = malloc(sizeof(Expression));
+    isMemoryAllocated(exp);
+    exp->num_instructions = count_instructionsf4();
+    exp->registers = malloc(sizeof(int) * NUM_REG);
+    isMemoryAllocated(exp->registers);
+    populate_instruc_arr(exp, ptr_f4);
+    
+    //, "mov"
+    //add
+    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
+    exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
+    exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
+    exp->Instruc_arr[0].output_reg = &exp->registers[0];
+    
+    //greather_than
+    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
+    exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[0] = regA
+    exp->Instruc_arr[1].input_regs[1] = &exp->registers[2]; //registers[1] = regB
+    exp->Instruc_arr[1].output_reg = &exp->registers[0];
+    
+    //"if_function"
+    exp->Instruc_arr[2].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
+    exp->Instruc_arr[2].input_regs[0] = &exp->registers[0]; //registers[0] = regA
+    exp->Instruc_arr[2].input_regs[1] = &exp->registers[1]; //registers[1] = regB
+    exp->Instruc_arr[2].output_reg = &exp->registers[0];
+    
+    //mov
+    exp->Instruc_arr[3].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
+    exp->Instruc_arr[3].input_regs[0] = &exp->registers[0]; //registers[0] = regA
+    exp->Instruc_arr[3].input_regs[1] = &exp->registers[1]; //registers[1] = regB
+    exp->Instruc_arr[3].output_reg = &exp->registers[3];
+    print_registers_address(exp->Instruc_arr, exp->num_instructions);
+    return exp;
+}
 int check_best_chrom(Population* p){
     int num_instructions = p->e->num_instructions;
     char* chrom_benchmark = malloc(sizeof(char) * (num_instructions * NUM_BITS+1));
@@ -285,19 +329,15 @@ void test_benchmark_with_values(Population* pop, int correct_answer, int regA, i
     exp_string_with_values = fill_exp_str_with_vals(exp_string, regA, regB, regC, correct_answer);
     printf("      %s               |         %d         |       %s    \n", exp_string_with_values, exp->registers[3], is_correct);
 }
-//F2: D = IF (A+B > C) THEN 1
-
-//F3: D = A % B 
 
 //F4: D = IF (A = B+1 && B=C+1) THEN 1
 
-//F5: D = (A+B) - (B+C)
 
 int main(){
     setlocale(LC_ALL, "");
     srand((unsigned)time(NULL));
     Population pop; //Initial population
-    pop.size = 150; 
+    pop.size = 160; 
     pop.generation = 1;
     int chromosome_size;
     pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
@@ -305,7 +345,7 @@ int main(){
     printf("\n======================================================================================\n");
     printf("                            CHOOSE AN OPTION OF BENCHMARK\n");
     printf("======================================================================================\n");
-    int answer = 3;
+    int answer = 4;
     int num_instructions = 0;
     int correct_answer = 0;
     int isBestChrom = 0;
@@ -375,7 +415,7 @@ int main(){
                     correct_answer = (values_to_regA[i] + values_to_regB[i]) - (values_to_regB[i] + values_to_regC[i]);
                     regA = values_to_regA[i];
                     regB = values_to_regB[i];
-                    regC = values_to_regB[i];
+                    regC = values_to_regC[i];
                     test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
                 }
             }else{
@@ -387,7 +427,7 @@ int main(){
             chromosome_size = 16;
             initialize_population(&pop, chromosome_size);
             print_population(&pop);
-            pop.e = generate_f3(); //sum, mov
+            pop.e = generate_f4(); //"add", "greater_than", "if_function", "mov"
             num_instructions = pop.e->num_instructions;
             genetic_alg(&pop);
             isBestChrom = check_best_chrom(&pop);
@@ -395,10 +435,10 @@ int main(){
                 printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
                 for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
                     populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
-                    correct_answer = (values_to_regA[i] + values_to_regB[i]) - (values_to_regB[i] + values_to_regC[i]);
+                    correct_answer = ((values_to_regA[i] + values_to_regB[i]) > values_to_regC[i])? 1: 0;
                     regA = values_to_regA[i];
                     regB = values_to_regB[i];
-                    regC = values_to_regB[i];
+                    regC = values_to_regC[i];
                     test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
                 }
             }else{
