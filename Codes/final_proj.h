@@ -27,7 +27,7 @@ typedef struct INSTRUCTION{
 typedef struct EXPRESSION{
     int* registers;
     Instruction* Instruc_arr;
-    Instruction* Instruc_output;
+    //Instruction* Instruc_output;
     int num_instructions; //how many instructions the expression has
     int result;
 }Expression;
@@ -142,6 +142,15 @@ int and_function(int regA, int regB);
  * @return int 
  */
 int if_function(int regA, int regB);
+
+
+/**
+ * @brief this function checks if regA is equal to RegB.
+ * @param regA int value
+ * @param regB int value
+ * @return int 
+ */
+int is_equal(int regA, int regB);
 //================================Chromosome Instructions========================================
 
 //================================GA Functions================================================

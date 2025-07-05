@@ -46,6 +46,10 @@ int and_function(int regA, int regB){
 int if_function(int regA, int regB){
     return (regA == 1)? TRUE: FALSE;
 }
+
+int is_equal(int regA, int regB){
+    return (regA == regB)? TRUE: FALSE;
+}
 //================================Chromosome Instructions========================================
 
 //================================GA Functions================================================
@@ -56,7 +60,7 @@ void double_to_bin(Chromosome* chromosome){
     }
 }
 void mutation(Chromosome* chromosome_n, int n_instructions){
-    int index_bit_change = rand() % n_instructions * 4;
+    int index_bit_change = rand() % n_instructions * NUM_BITS;
     if(chromosome_n->bin_arr[index_bit_change] == 0) 
         chromosome_n->bin_arr[index_bit_change] = 1;
     else 
@@ -68,7 +72,7 @@ Chromosome crossover(Chromosome* parent1, Chromosome* parent2, int n_instruction
     child.bin_arr = malloc(sizeof(int) * parent1->size);
     child.double_arr = malloc(sizeof(double) * parent1->size);
     // a * 4 = 4a/2 = 2a
-    child.fitness = 8;
+    child.fitness = 8;//check this later bc i think this is wrong
     child.size = parent1->size;
     if(parent1->fitness > parent2->fitness){
         for(int i = 0; i < parent1->size; i++){
@@ -147,17 +151,17 @@ void fitness_func(Population* pop){
     Chromosome* chrom_pop = pop->chromosomes;
     int num_pop = pop->size;
     int num_instructions = pop->e->num_instructions;
-    char* perfect_indiv = malloc(sizeof(char) * (num_instructions * 4 + 1));
+    char* perfect_indiv = malloc(sizeof(char) * (num_instructions * NUM_BITS + 1));
     for(int i = 0; i < num_instructions; i++){
         if(i == 0)
         sprintf(perfect_indiv, "%s", pop->e->Instruc_arr[i].code);
         else
-        sprintf(perfect_indiv + (4 * i), "%s", pop->e->Instruc_arr[i].code);          
+        sprintf(perfect_indiv + (NUM_BITS * i), "%s", pop->e->Instruc_arr[i].code);          
     }
   
     for(int i = 0; i < num_pop; i++){
-        chrom_pop[i].fitness = 4 * num_instructions;
-        for(int j = 0; j < num_instructions * 4; j++) {
+        chrom_pop[i].fitness = NUM_BITS * num_instructions;
+        for(int j = 0; j < num_instructions * NUM_BITS; j++) {
             if((chrom_pop[i].bin_arr[j] + '0') != perfect_indiv[j]){
                 chrom_pop[i].fitness -= 1;
             }
@@ -188,7 +192,7 @@ void genetic_alg(Population* pop){
     int flag = TRUE;
     double mutation_rate = (double)rand()/RAND_MAX;
     pop->generation = 1;
-    while(pop->generation < 100 && flag == TRUE){
+    while(pop->generation < 500 && flag == TRUE){
         fitness_func(pop);
         //print_pop_with_fitness(pop);
         if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
@@ -202,7 +206,7 @@ void genetic_alg(Population* pop){
                 parents[1] = selection(pop);
                 pop->chromosomes[i] = crossover(&parents[0], &parents[1], pop->e->num_instructions);
                 mutation_rate = (double)rand()/RAND_MAX;
-                if(mutation_rate > 0.1 && mutation_rate < 0.7){
+                if(mutation_rate > 0.1 && mutation_rate < 0.3){
                     mutation(&pop->chromosomes[i], pop->e->num_instructions);
                 }
             }
