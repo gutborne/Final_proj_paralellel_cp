@@ -318,7 +318,7 @@ int check_best_chrom(Population* p){
         }
     }
     chrom_benchmark[index_chrom] = '\0';
-    //printf("%s\n", chrom_benchmark);
+    printf("%s\n", chrom_benchmark);
     for(int i = 0; i < num_instructions * NUM_BITS; ){
         if(chrom_benchmark[i] == p->best_chromosome.bin_arr[i] + '0'){
             i++;
@@ -403,7 +403,7 @@ int main(){
     printf("\n====================================================================================\n");
     printf("                            CHOOSE AN OPTION OF BENCHMARK\n");
     printf("======================================================================================\n");
-    int answer = 4;
+    int answer = 5;
     int num_instructions = 0;
     int correct_answer = 0;
     int isBestChrom = 0;
@@ -462,7 +462,7 @@ int main(){
             chromosome_size = 16;
             initialize_population(&pop, chromosome_size);
             print_population(&pop);
-            pop.e = generate_f3(); //sum, mov
+            pop.e = generate_f3(); //
             num_instructions = pop.e->num_instructions;
             genetic_alg(&pop);
             isBestChrom = check_best_chrom(&pop);

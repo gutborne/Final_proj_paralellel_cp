@@ -171,9 +171,11 @@ void mutation(Chromosome* chromosome_n, int num_instructions);
  * @brief Performs crossover between two parent chromosomes to create two child chromosomes.
  * @param parent1 Pointer to the first parent chromosome.
  * @param parent2 Pointer to the second parent chromosome.
+ * @param n_instructions number of instructions
+ * @param curr_index_chrom index of the current chromosome
  * @return a chromosome
  */
-Chromosome crossover(Chromosome* parent1, Chromosome* parent2, int n_instructions);
+Chromosome crossover(Chromosome* parent1, Chromosome* parent2, int n_instructions, int curr_index_chrom);
 
 /**
  * @brief Prints the population of chromosomes.
@@ -200,7 +202,8 @@ void initialize_population(Population* population, int chrom_size);
 /**
  * @brief Evaluates the fitness of each chromosome in the population.
  * @param population Pointer to the population structure.
+ * @param index_curr_chrom index to the current chromosome
  */
-void fitness_func(Population* population); 
+void fitness_func(Population* population, int index_curr_chrom); 
 //================================GA Functions================================================
 #endif
