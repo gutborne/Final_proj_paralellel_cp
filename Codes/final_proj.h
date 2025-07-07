@@ -206,4 +206,68 @@ void initialize_population(Population* population, int chrom_size);
  */
 void fitness_func(Population* population, int index_curr_chrom); 
 //================================GA Functions================================================
+
+//================================Expression Functions========================================
+/**
+ * @brief generates the expression that will calculate the first bench f1: D = A + B
+ * @return an Expression address 
+ */
+Expression* generate_f1();
+
+/**
+ * @brief generates the expression that will calculate the second bench f2: D = A % B
+ * @return an Expression address 
+ */
+Expression* generate_f2();
+
+/**
+ * @brief generates the expression that will calculate the third bench f3: D = (A + B) - (B + C)
+ * @return an Expression address 
+ */
+Expression* generate_f3();
+
+/**
+ * @brief generates the expression that will calculate the fourth bench f4: D = IF(A + B > C) THEN 1 ELSE 0
+ * @return an Expression address 
+ */
+Expression* generate_f4();
+
+/**
+ * @brief generates the expression that will calculate the fifth bench f5: D = IF (A == B+1 && B == C+1) THEN 1 ELSE 0
+ * @return an Expression address 
+ */
+Expression* generate_f5();
+
+//================================Expression Functions========================================
+
+//================================Utility Functions========================================
+/**
+ * @brief receives an address of any type and checks if the memory was allocated successfully.
+ * @param pointer pointer to check if it the address it points to is allocated
+ */
+void isMemoryAllocated(void* pointer);
+
+/**
+ * @brief prints the detailed informations about each element in the instruc_arr.
+ * @param Instruc_arr pointer to the instruction array.
+ * @param num_instructions how many instructions.
+ */
+void print_registers_address(Instruction* Instruc_arr, int num_instructions);
+
+/**
+ * @brief prints the instruction array with some informations.
+ * @param i pointer to the instruction array.
+ * @param limit how many instructions to print.
+ */
+void print_instruc_arr(Instruction* i, int limit);
+
+/**
+ * @brief Populates the instruction array with the given instructions.
+ * @param exp Pointer to the Expression structure.
+ * @param instruc_input Array of strings containing instruction names.
+ */
+void populate_instruc_arr(Expression* exp, const char* instruc_input[]);
+//================================Utility Functions========================================
+
+
 #endif

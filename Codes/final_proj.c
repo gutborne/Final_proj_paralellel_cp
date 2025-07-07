@@ -2,31 +2,6 @@
 #include <mpi.h>
 #include <locale.h>
 
-//F1: D = A + B
-const char* f1[2] = {"add", "mov"}; //num
-//F2: D = A % B
-const char* f2[2] = {"module", "mov"};
-//F3: D = (A + B) - (B + C)
-const char* f3[4] = {"add", "add", "sub", "mov"};
-//F4: D = IF(A + B > C) THEN 1 ELSE 0
-const char* f4[4] = {"add", "greater_than", "if_function", "mov"};
-//F4: D = IF (A == B+1 && B == C+1) THEN 1 ELSE 0
-const char* f5[7] = {"increment", "is_equal", "increment", "is_equal", "and_function", "if_function", "mov"};
-
-/// @brief dont forget to create a function to count how many elements we have at runtime
-Instruction instruc_list[] = {
-    {"add", add, "0000"},
-    {"sub", sub, "0001"},
-    {"mult", mult, "0010"},
-    {"mov", mov, "0011"},
-    {"increment", increment, "0100"},
-    {"greater_than", greater_than, "0101"},
-    {"module", module, "0111"},
-    {"and_function", and_function, "1000"},
-    {"if_function", if_function, "1001"},
-    {"is_equal", is_equal, "1010"}
-}; 
-
 void print_population(Population* population){
     for(int i = 0; i < population->size; i++){
         printf("%d chrom: ", i + 1);
@@ -41,70 +16,6 @@ void print_population(Population* population){
     }
 }
 
-
-void isMemoryAllocated(void* pointer){
-    if(pointer != NULL){
-        printf("memory alocated!\n");
-    }else{
-        printf("error in allocate memory!\n");
-    }
-}
-
-int count_instructionsf1(){ 
-    int number_instructions = sizeof(f1)/sizeof(f1[0]);
-    printf("\nnumber of instructions: %d\n", number_instructions);
-    return number_instructions;
-}
-int count_instructionsf2(){ 
-    int number_instructions = sizeof(f2)/sizeof(f2[0]);
-    printf("\nnumber of instructions: %d\n", number_instructions);
-    return number_instructions;
-}
-
-int count_instructionsf3(){ 
-    int number_instructions = sizeof(f3)/sizeof(f3[0]);
-    printf("\nnumber of instructions: %d\n", number_instructions);
-    return number_instructions;
-}
-
-int count_instructionsf4(){ 
-    int number_instructions = sizeof(f4)/sizeof(f4[0]);
-    printf("\nnumber of instructions: %d\n", number_instructions);
-    return number_instructions;
-}
-
-int count_instructionsf5(){ 
-    int number_instructions = sizeof(f5)/sizeof(f5[0]);
-    printf("\nnumber of instructions: %d\n", number_instructions);
-    return number_instructions;
-}
-
-void print_instruc_arr(Instruction* i, int limit){
-    for(int j = 0; j < limit; j++){
-        printf("Instruction %d -> name: %s | code: %s ptr_func: %p\n", j + 1, i[j].name, i[j].code, i->ptr_to_func);
-    }
-}
-
-void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
-    int limit = exp->num_instructions;
-    exp->Instruc_arr = malloc(sizeof(Instruction) * limit);
-    isMemoryAllocated(exp->Instruc_arr);
-    int index = 0;
-    while(index < limit){
-        //dont forget to create a function to count how many elements has instruc_list[] 
-        for(int i = 0; i < 10; i++){// 8 is the current number of elements of instruc_list[]
-            if(strcmp(instruc_list[i].name, instruc_input[index]) == 0){
-                exp->Instruc_arr[index].name = instruc_list[i].name;
-                exp->Instruc_arr[index].code = instruc_list[i].code;
-                exp->Instruc_arr[index].ptr_to_func = instruc_list[i].ptr_to_func;
-                index++;
-                break;
-            }
-        }
-    }
-    print_instruc_arr(exp->Instruc_arr, limit);
-}
-
 void populate_registers(int* registers, int A, int B, int C, int D){
     registers[0] = A, registers[1] = B, registers[2] = C, registers[3] = D;
     /*
@@ -112,199 +23,6 @@ void populate_registers(int* registers, int A, int B, int C, int D){
         printf("&register[%d] = %p\n", i + 1, registers + i);
     }
     */
-}
-
-void print_registers_address(Instruction* Instruc_arr, int num_instructions){
-    for(int i = 0; i < num_instructions; i++){
-        printf("instruction name: %s\n", Instruc_arr[i].name);
-        printf("Input 1: %p\n", Instruc_arr[i].input_regs[0]);
-        printf("Input 2: %p\n", Instruc_arr[i].input_regs[1]);
-        printf("Ouput: %p\n", Instruc_arr[i].output_reg);
-    }
-}
-
-//F1: D = A + B
-//f1[2] = {"add", "mov"};
-Expression* generate_f1(){
-    //sum, mov 
-    printf("\nInside generate_f1\n");
-    const char** ptr_f1 = f1;
-    Expression* exp = malloc(sizeof(Expression));
-    isMemoryAllocated(exp);
-    exp->num_instructions = count_instructionsf1();
-    exp->registers = malloc(sizeof(int) * NUM_REG);
-    isMemoryAllocated(exp->registers);
-    populate_instruc_arr(exp, ptr_f1);
-    //sum
-    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[0].output_reg = &exp->registers[0];
-    
-    //mov
-    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[1].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[1].output_reg = &exp->registers[3];
-    print_registers_address(exp->Instruc_arr, exp->num_instructions);
-    return exp;
-}
-
-//F2: D = A % B
-//f2[2] = {"module", "mov"};
-Expression* generate_f2(){
-    //sum, mov 
-    const char** ptr_f2 = f2;
-    Expression* exp = malloc(sizeof(Expression));
-    isMemoryAllocated(exp);
-    exp->num_instructions = count_instructionsf2();
-    exp->registers = malloc(sizeof(int) * NUM_REG);
-    isMemoryAllocated(exp->registers);
-    populate_instruc_arr(exp, ptr_f2);
-    //mod
-    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[0].output_reg = &exp->registers[0];
-    
-    //mov
-    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[1].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[1].output_reg = &exp->registers[3];
-    print_registers_address(exp->Instruc_arr, exp->num_instructions);
-    return exp;
-}
-
-//F3: D = (A + B) - (B + C)
-//f3[2] = {"add", "add", "sub", "mov"};
-Expression* generate_f3(){
-    //sum, mov 
-    printf("\nInside generate_f3\n");
-    const char** ptr_f3 = f3;
-    Expression* exp = malloc(sizeof(Expression));
-    isMemoryAllocated(exp);
-    exp->num_instructions = count_instructionsf3();
-    exp->registers = malloc(sizeof(int) * NUM_REG);
-    isMemoryAllocated(exp->registers);
-    populate_instruc_arr(exp, ptr_f3);
-    //sum
-    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[0].output_reg = &exp->registers[0];
-    
-    //sum
-    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[1].input_regs[0] = &exp->registers[1]; //registers[0] = regA
-    exp->Instruc_arr[1].input_regs[1] = &exp->registers[2]; //registers[1] = regB
-    exp->Instruc_arr[1].output_reg = &exp->registers[1];
-    
-    //sub
-    exp->Instruc_arr[2].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[2].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[2].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[2].output_reg = &exp->registers[0];
-    
-    //mov
-    exp->Instruc_arr[3].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[3].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[3].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[3].output_reg = &exp->registers[3];
-    print_registers_address(exp->Instruc_arr, exp->num_instructions);
-    return exp;
-}
-
-
-Expression* generate_f4(){
-    printf("\nInside generate_f4\n");
-    const char** ptr_f4 = f4;
-    Expression* exp = malloc(sizeof(Expression));
-    isMemoryAllocated(exp);
-    exp->num_instructions = count_instructionsf4();
-    exp->registers = malloc(sizeof(int) * NUM_REG);
-    isMemoryAllocated(exp->registers);
-    populate_instruc_arr(exp, ptr_f4);
-    
-    //add
-    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[0].output_reg = &exp->registers[0];
-
-    //greather_than
-    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[1].input_regs[1] = &exp->registers[2]; //registers[1] = regB
-    exp->Instruc_arr[1].output_reg = &exp->registers[0];
-    
-    //"if_function"
-    exp->Instruc_arr[2].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[2].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[2].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[2].output_reg = &exp->registers[0];
-    
-    //mov
-    exp->Instruc_arr[3].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[3].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[3].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[3].output_reg = &exp->registers[3];
-    print_registers_address(exp->Instruc_arr, exp->num_instructions);
-    return exp;
-}
-
-Expression* generate_f5(){
-    printf("\nInside generate_f5\n");
-    const char** ptr_f5 = f5;
-    Expression* exp = malloc(sizeof(Expression));
-    isMemoryAllocated(exp);
-    exp->num_instructions = count_instructionsf5();
-    exp->registers = malloc(sizeof(int) * NUM_REG);
-    isMemoryAllocated(exp->registers);
-    populate_instruc_arr(exp, ptr_f5);
-    //increment
-    exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[0].input_regs[0] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[0].input_regs[1] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[0].output_reg = &exp->registers[1];
-    
-    //is_equal
-    exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[1] = regA
-    exp->Instruc_arr[1].input_regs[1] = &exp->registers[1]; //registers[0] = regB
-    exp->Instruc_arr[1].output_reg = &exp->registers[0];
-    
-    //increment
-    exp->Instruc_arr[2].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[2].input_regs[0] = &exp->registers[2]; //registers[1] = regB
-    exp->Instruc_arr[2].input_regs[1] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[2].output_reg = &exp->registers[2];
-    
-    //is_equal
-    exp->Instruc_arr[3].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[3].input_regs[0] = &exp->registers[1]; //registers[1] = regA
-    exp->Instruc_arr[3].input_regs[1] = &exp->registers[2]; //registers[0] = regB
-    exp->Instruc_arr[3].output_reg = &exp->registers[1];
-    
-    //and_function
-    exp->Instruc_arr[4].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[4].input_regs[0] = &exp->registers[0]; //registers[1] = regA
-    exp->Instruc_arr[4].input_regs[1] = &exp->registers[1]; //registers[0] = regB
-    exp->Instruc_arr[4].output_reg = &exp->registers[0];
-    
-    //"if_function"
-    exp->Instruc_arr[5].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[5].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[5].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[5].output_reg = &exp->registers[0];
-    
-    //mov
-    exp->Instruc_arr[6].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
-    exp->Instruc_arr[6].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[6].input_regs[1] = &exp->registers[1]; //registers[1] = regB
-    exp->Instruc_arr[6].output_reg = &exp->registers[3];//registers[3] = regD
-    print_registers_address(exp->Instruc_arr, exp->num_instructions);
-    return exp;
 }
 
 int check_best_chrom(Population* p){
@@ -329,6 +47,7 @@ int check_best_chrom(Population* p){
     }
     return TRUE;
 }
+
 void helper_fill_exp_str_with_vals(char* aux_exp_str, int reg, int* ptr_j){
     //printf("inside helper_fill_exp_str_with_vals\n");
     char str[10];
@@ -345,6 +64,7 @@ void helper_fill_exp_str_with_vals(char* aux_exp_str, int reg, int* ptr_j){
     aux_exp_str[*ptr_j] = '\0';
     //printf("aux_exp_str: %s\n", aux_exp_str);
 }
+
 char* fill_exp_str_with_vals(char* exp_string, int regA, int regB, int regC, int regD){
     //printf("inside fill function\n");
     int i = 0, size = 0, j = 0;
@@ -435,6 +155,8 @@ int main(){
                 printf("Not equal! Not the best chrom!\n");
             }
             break;
+       
+        
         case 2:
             exp_string = "D = A % B"; //expression
             chromosome_size = 16;
@@ -457,7 +179,7 @@ int main(){
                 printf("Not equal! Not the best chrom!\n");
             }
             break;
-        case 3:
+         case 3:
             exp_string = "D = (A + B) - (B + C)"; //expression
             chromosome_size = 16;
             initialize_population(&pop, chromosome_size);

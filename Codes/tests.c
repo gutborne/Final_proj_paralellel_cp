@@ -13,8 +13,13 @@ int (*Code(char code))(int, int){
     }
 }
 */
+const char* f1[3] = {"sum", "mov", "afklsdj"};
 
-
+int count_instructionsf1(const char* f1[]){ 
+    int number_instructions = sizeof(f1)/sizeof(f1[0]);
+    printf("\nnumber of instructions: %d\n", number_instructions);
+    return number_instructions;
+}
 int main(){
     //                          function pointers
     /*
@@ -41,7 +46,6 @@ int main(){
     }
     
    
-    char* f1[] = {"sum", "mov", "afklsdj", "afksdljf"};
     char** ptr_f1 = f1;
 
     for(int i = 0; i < 4; i++){
@@ -66,5 +70,7 @@ int main(){
    
     int res = 5 > 5;
     printf("res: %d\n", res);
+    int n_instructions = count_instructionsf1(f1);
+    printf("n_instructions: %d\n", n_instructions);
     return 0;
 }
