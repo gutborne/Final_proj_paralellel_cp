@@ -80,17 +80,6 @@ Chromosome crossover(Chromosome* parent1, Chromosome* parent2, int n_instruction
     child.double_arr = malloc(sizeof(double) * parent1->size);
     // a * 4 = 4a/2 = 2a
     child.size = parent1->size;
-    if(parent1->fitness > parent2->fitness){
-        for(int i = 0; i < parent1->size; i++){
-            child.bin_arr[i] = parent1->bin_arr[i];   
-            child.double_arr[i] = parent1->double_arr[i];   
-        }
-    }else{
-        for(int i = 0; i < parent2->size; i++){
-            child.bin_arr[i] = parent2->bin_arr[i];   
-            child.double_arr[i] = parent2->double_arr[i];   
-        }
-    }
     int j = n_instructions * 2;
     for(int i = 0; i < n_instructions * 2; i++){
         child.bin_arr[i] = parent1->bin_arr[i];
@@ -207,7 +196,7 @@ void genetic_alg(Population* pop){
     int flag = TRUE;
     double mutation_rate = (double)rand()/RAND_MAX;
     pop->generation = 1;
-    while(pop->generation <= 1000 && flag == TRUE){
+    while(pop->generation <= 30 && flag == TRUE){
         if(pop->generation == 1){
             for(int i = 0; i < pop->size; i++){
                 fitness_func(pop, i);
@@ -220,7 +209,8 @@ void genetic_alg(Population* pop){
             print_chromosome(&pop->best_chromosome);
             flag = FALSE;
         }else{
-            Chromosome parents[2]; 
+            Chromosome parents[2];
+            printf("                                GENERATION %dTH\n", pop->generation); 
             for(int i = 0; i < pop->size; i++){
                 parents[0] = selection(pop);
                 parents[1] = selection(pop);
@@ -233,7 +223,7 @@ void genetic_alg(Population* pop){
             }
             find_best_fitness_of_pop(pop);
             find_best_chrom_of_pop(pop);
-            //print_pop_with_fitness(pop);
+            print_pop_with_fitness(pop);
         }
         pop->generation++;
     }

@@ -36,7 +36,6 @@ int check_best_chrom(Population* p){
         }
     }
     chrom_benchmark[index_chrom] = '\0';
-    printf("%s\n", chrom_benchmark);
     for(int i = 0; i < num_instructions * NUM_BITS; ){
         if(chrom_benchmark[i] == p->best_chromosome.bin_arr[i] + '0'){
             i++;
@@ -117,7 +116,7 @@ int main(){
     int answer = 1;
     while(answer >= 1 && answer <= 5){
         Population pop; //Initial population
-        pop.size = 150; 
+        pop.size = 300; 
         pop.generation = 1;
         int chromosome_size;
         pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
@@ -147,7 +146,7 @@ int main(){
         switch(answer){
             case 1:
                 exp_string = "D = A + B"; //expression
-                chromosome_size = 16;
+                chromosome_size = 8;
                 initialize_population(&pop, chromosome_size);
                 print_population(&pop);
                 pop.e = generate_f1(); //sum, mov
@@ -169,7 +168,7 @@ int main(){
                 break;
             case 2:
                 exp_string = "D = A % B"; //expression
-                chromosome_size = 16;
+                chromosome_size = 8;
                 initialize_population(&pop, chromosome_size);
                 print_population(&pop);
                 pop.e = generate_f2(); //mod, mov
