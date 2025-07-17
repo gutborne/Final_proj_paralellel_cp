@@ -12,6 +12,7 @@
 #define NUM_REG 4
 #define NUM_INPUTS 2
 #define NUM_BITS 4
+#define TAG_STOP 1
 
 typedef struct INSTRUCTION Instruction;
 typedef struct EXPRESSION Expression;
@@ -28,8 +29,8 @@ typedef struct INSTRUCTION{
 typedef struct EXPRESSION{
     int* registers;
     Instruction* Instruc_arr;
-    //Instruction* Instruc_output;
     int num_instructions; //how many instructions the expression has
+    int* perfect_chrom;
     int result;
 }Expression;
 
@@ -205,7 +206,7 @@ void initialize_population(Population* population, int chrom_size);
  * @param population Pointer to the population structure.
  * @param index_curr_chrom index to the current chromosome
  */
-void fitness_func(Population* population, int index_curr_chrom); 
+int fitness_func(Chromosome* chrom, Expression* e); 
 //================================GA Functions================================================
 
 //================================Expression Functions========================================
@@ -213,31 +214,31 @@ void fitness_func(Population* population, int index_curr_chrom);
  * @brief generates the expression that will calculate the first bench f1: D = A + B
  * @return an Expression address 
  */
-Expression* generate_f1();
+Expression* generate_f1(Population* pop);
 
 /**
  * @brief generates the expression that will calculate the second bench f2: D = A % B
  * @return an Expression address 
  */
-Expression* generate_f2();
+Expression* generate_f2(Population* pop);
 
 /**
  * @brief generates the expression that will calculate the third bench f3: D = (A + B) - (B + C)
  * @return an Expression address 
  */
-Expression* generate_f3();
+Expression* generate_f3(Population* pop);
 
 /**
  * @brief generates the expression that will calculate the fourth bench f4: D = IF(A + B > C) THEN 1 ELSE 0
  * @return an Expression address 
  */
-Expression* generate_f4();
+Expression* generate_f4(Population* pop);
 
 /**
  * @brief generates the expression that will calculate the fifth bench f5: D = IF (A == B+1 && B == C+1) THEN 1 ELSE 0
  * @return an Expression address 
  */
-Expression* generate_f5();
+Expression* generate_f5(Population* pop);
 
 //================================Expression Functions========================================
 

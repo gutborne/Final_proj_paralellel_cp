@@ -13,7 +13,6 @@ void print_population(Population* population){
             printf("%2d ", population->chromosomes[i].bin_arr[j]);
         }
         printf("\n");
-        printf("FITNESS: %d\n", population->chromosomes[i].fitness);
     }
 }
 
@@ -151,7 +150,7 @@ int main(int argc, char** argv){
                 chromosome_size = 8;
                 initialize_population(&pop, chromosome_size);
                 print_population(&pop);
-                pop.e = generate_f1(); //sum, mov
+                pop.e = generate_f1(&pop); //sum, mov
                 num_instructions = pop.e->num_instructions;
                 genetic_alg(&pop);
                 isBestChrom = check_best_chrom(&pop);
@@ -173,7 +172,7 @@ int main(int argc, char** argv){
                 chromosome_size = 8;
                 initialize_population(&pop, chromosome_size);
                 print_population(&pop);
-                pop.e = generate_f2(); //mod, mov
+                pop.e = generate_f2(&pop); //mod, mov
                 num_instructions = pop.e->num_instructions;
                 genetic_alg(&pop);
                 isBestChrom = check_best_chrom(&pop);
@@ -195,7 +194,7 @@ int main(int argc, char** argv){
                 chromosome_size = 16;
                 initialize_population(&pop, chromosome_size);
                 print_population(&pop);
-                pop.e = generate_f3(); //
+                pop.e = generate_f3(&pop); //
                 num_instructions = pop.e->num_instructions;
                 genetic_alg(&pop);
                 isBestChrom = check_best_chrom(&pop);
@@ -218,7 +217,7 @@ int main(int argc, char** argv){
                 chromosome_size = 16;
                 initialize_population(&pop, chromosome_size);
                 print_population(&pop);
-                pop.e = generate_f4(); //"add", "greater_than", "if_function", "mov"
+                pop.e = generate_f4(&pop); //"add", "greater_than", "if_function", "mov"
                 num_instructions = pop.e->num_instructions;
                 genetic_alg(&pop);
                 isBestChrom = check_best_chrom(&pop);
@@ -241,7 +240,7 @@ int main(int argc, char** argv){
                 chromosome_size = 28;
                 initialize_population(&pop, chromosome_size);
                 print_population(&pop);
-                pop.e = generate_f5(); //increment, is_equal, increment, is_equal, and_function, if_function, mov
+                pop.e = generate_f5(&pop); //increment, is_equal, increment, is_equal, and_function, if_function, mov
                 num_instructions = pop.e->num_instructions;
                 genetic_alg(&pop);
                 isBestChrom = check_best_chrom(&pop);
