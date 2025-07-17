@@ -1,5 +1,5 @@
 #include "final_proj.h"
-#include <mpi.h>
+
 #include <locale.h>
 
 void print_population(Population* population){
@@ -13,6 +13,7 @@ void print_population(Population* population){
             printf("%2d ", population->chromosomes[i].bin_arr[j]);
         }
         printf("\n");
+        printf("FITNESS: %d\n", population->chromosomes[i].fitness);
     }
 }
 
@@ -110,13 +111,14 @@ void test_benchmark_with_values(Population* pop, int correct_answer, int regA, i
     printf("      %s               |         %d         |       %s    \n", exp_string_with_values, exp->registers[3], is_correct);
 }
 
-int main(){
+int main(int argc, char** argv){
+    MPI_Init(&argc, &argv);
     setlocale(LC_ALL, "");
     srand((unsigned)time(NULL));
     int answer = 1;
     while(answer >= 1 && answer <= 5){
         Population pop; //Initial population
-        pop.size = 300; 
+        pop.size = 50; 
         pop.generation = 1;
         int chromosome_size;
         pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
@@ -265,6 +267,7 @@ int main(){
                 break;
         }
     }
+    MPI_Finalize();
     return 0;
 }
 

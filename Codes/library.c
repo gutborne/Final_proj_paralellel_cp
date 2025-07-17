@@ -123,7 +123,6 @@ Chromosome selection(Population* pop){
 } 
 void print_pop_with_fitness(Population* population){
     int chrom_size = population->chromosomes[0].size;
-    printf("                            %dth GENERATION \n", population->generation);
     for(int i = 0; i < population->size; i++){
         printf("%d chrom: ", i + 1);
         /*for(int j = 0; j < chrom_size; j++){
@@ -196,30 +195,66 @@ void genetic_alg(Population* pop){
     int flag = TRUE;
     double mutation_rate = (double)rand()/RAND_MAX;
     pop->generation = 1;
-    while(pop->generation <= 30 && flag == TRUE){
-        if(pop->generation == 1){
-            for(int i = 0; i < pop->size; i++){
-                fitness_func(pop, i);
-            }
-            find_best_fitness_of_pop(pop);
-            find_best_chrom_of_pop(pop);
-        } 
+    while(pop->generation <= 10 && flag == TRUE){
         if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
             printf("\nPERFECT CHROMOSOME FOUND AT %dth GENERATION!\n", pop->generation);
             print_chromosome(&pop->best_chromosome);
             flag = FALSE;
         }else{
+            int index = 0;
+            int my_rank;
+            MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+            int total_n_process;
+            MPI_Comm_size(MPI_COMM_WORLD, &total_n_process);
+            MPI_Status stat;
             Chromosome parents[2];
+            int remain_pop = pop->size % total_n_process, j = 0, partition = pop->size / (total_n_process - 1), i_rank = 1;
             printf("                                GENERATION %dTH\n", pop->generation); 
-            for(int i = 0; i < pop->size; i++){
-                parents[0] = selection(pop);
-                parents[1] = selection(pop);
-                pop->chromosomes[i] = crossover(&parents[0], &parents[1], pop->e->num_instructions, i);
-                mutation_rate = (double)rand()/RAND_MAX;
-                if(mutation_rate > 0.1 && mutation_rate < 0.7){
-                    mutation(&pop->chromosomes[i], pop->e->num_instructions);
+            if(my_rank == 0){//master process
+                for(int i = 0; i < pop->size; i++){
+                    parents[0] = selection(pop);
+                    parents[1] = selection(pop);
+                    pop->chromosomes[i] = crossover(&parents[0], &parents[1], pop->e->num_instructions, i);
+                    mutation_rate = (double)rand()/RAND_MAX;
+                    if(mutation_rate > 0.1 && mutation_rate < 0.7){
+                        mutation(&pop->chromosomes[i], pop->e->num_instructions);
+                    }
                 }
-                fitness_func(pop, i);
+                if(remain_pop == 0){
+                    for(index; index < pop->size;){ 
+                        if(j == partition){
+                            i_rank++;
+                            j = 0;
+                        }
+                        for(j; j < partition; j++){
+                            MPI_Send(pop->chromosomes[index].bin_arr, pop->chromosomes->size, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD);
+                            MPI_Recv(pop->chromosomes[index].fitness, 1, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD, &stat);
+                            index++;
+                        }
+                    }
+                }else{
+                    for(index; index < pop->size - remain_pop; index++){
+                        if(j == partition){
+                            i_rank++;
+                            j = 0;
+                        }
+                        for(j; j < partition; j++){
+                            MPI_Send(pop->chromosomes[index].bin_arr, pop->chromosomes->size, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD);
+                            MPI_Recv(pop->chromosomes[index].fitness, 1, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD, &stat);
+                            index++;
+                        }
+                    }
+                    i_rank = 1;
+                    for(int i = 0; i < remain_pop; i++){
+                        MPI_Send(pop->chromosomes[index].bin_arr, pop->chromosomes->size, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD);
+                        MPI_Recv(pop->chromosomes[index].fitness, 1, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD, &stat);
+                        i_rank++;
+                    }
+                }
+            }else{//slaves
+                MPI_Recv(pop->chromosomes[index].bin_arr, pop->chromosomes->size, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD, &stat);
+                fitness_func(pop, index);
+                MPI_Send(pop->chromosomes[index].fitness, 1, MPI_INT, i_rank % total_n_process, 0, MPI_COMM_WORLD);
             }
             find_best_fitness_of_pop(pop);
             find_best_chrom_of_pop(pop);
@@ -245,6 +280,9 @@ void initialize_population(Population* population, int chrom_size) {
                 population->chromosomes[i].bin_arr[j] = 0;
             population->chromosomes[i].double_arr[j] = rand_val;
         }
+        fitness_func(population, i);
+        find_best_fitness_of_pop(population);
+        find_best_chrom_of_pop(population);
     }
 }
 
@@ -434,6 +472,7 @@ Expression* generate_f3(){
     print_registers_address(exp->Instruc_arr, exp->num_instructions);
     return exp;
 }
+
 
 Expression* generate_f4(){
     printf("\nInside generate_f4\n");
