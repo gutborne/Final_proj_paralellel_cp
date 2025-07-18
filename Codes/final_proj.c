@@ -116,7 +116,7 @@ int main(){
     int answer = 1;
     while(answer >= 1 && answer <= 5){
         Population pop; //Initial population
-        pop.size = 300; 
+        pop.size = 150; 
         pop.generation = 1;
         int chromosome_size;
         pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
@@ -127,7 +127,7 @@ int main(){
         printf("(2) D = A %% B;\n");
         printf("(3) D = (A + B) - (B + C);\n");
         printf("(4) D = IF(A + B > C) THEN 1 ELSE 0;\n");
-        printf("(5) D = IF(A == B) THEN 1 ELSE 0;\n");
+        printf("(5) D = IF (A == B+1 && B == C+1) THEN 1 ELSE 0;\n");
         printf("(ANOTHER INT NUMBER) FINISH THE PROGRAM;\n");
         isMemoryAllocated(pop.chromosomes);
         int num_instructions = 0;

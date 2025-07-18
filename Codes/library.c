@@ -196,7 +196,7 @@ void genetic_alg(Population* pop){
     int flag = TRUE;
     double mutation_rate = (double)rand()/RAND_MAX;
     pop->generation = 1;
-    while(pop->generation <= 30 && flag == TRUE){
+    while(pop->generation <= 700 && flag == TRUE){
         if(pop->generation == 1){
             for(int i = 0; i < pop->size; i++){
                 fitness_func(pop, i);
