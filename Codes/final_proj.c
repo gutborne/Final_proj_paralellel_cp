@@ -105,166 +105,186 @@ void test_benchmark_with_values(Population* pop, int correct_answer, int regA, i
     }
     //is_correct = (*exp->Instruc_arr[i].output_reg == correct_answer)? "correct": "incorrect";
     if(exp->registers[3] == correct_answer) is_correct = "correct";
-    else "incorrect";
     exp_string_with_values = fill_exp_str_with_vals(exp_string, regA, regB, regC, correct_answer);
     printf("      %s               |         %d         |       %s    \n", exp_string_with_values, exp->registers[3], is_correct);
 }
 
 int main(int argc, char** argv){
     MPI_Init(&argc, &argv);
-    setlocale(LC_ALL, "");
-    srand((unsigned)time(NULL));
-    int answer = 1;
-    while(answer >= 1 && answer <= 5){
-        Population pop; //Initial population
-        pop.size = 50; 
-        pop.generation = 1;
-        int chromosome_size;
-        pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
-        printf("\n===============================================================================================================\n");
-        printf("                            CHOOSE AN OPTION OF BENCHMARK\n");
-        printf("===============================================================================================================\n");
-        printf("(1) D = A + B;\n");
-        printf("(2) D = A %% B;\n");
-        printf("(3) D = (A + B) - (B + C);\n");
-        printf("(4) D = IF(A + B > C) THEN 1 ELSE 0;\n");
-        printf("(5) D = IF(A == B) THEN 1 ELSE 0;\n");
-        printf("(ANOTHER INT NUMBER) FINISH THE PROGRAM;\n");
-        isMemoryAllocated(pop.chromosomes);
-        int num_instructions = 0;
-        int correct_answer = 0;
-        int isBestChrom = 0;
-        int values_to_regA[] = {10, 3, 10, 9, 100, 32, 40, 54, 23, 62};
-        int values_to_regB[] = {15, 36, 2, 9, 12, 24, 54, 23, 11, 7};
-        int values_to_regC[] = {5, 13, 24, 39, 52, 62, 55, 33, 21, 50};
-        int regA = 0, regB = 0, regC = 0;
-        char* exp_string  = NULL;
-        printf("TYPE THE ANSWER: \n");
-        while(scanf("%d", &answer) != 1 || answer < 1){
-            while(getchar() != '\n');
-            printf("INVALID OPERATION! PLEASE CHOOSE A VALID NUMBER(1-5): ");            
+    int my_rank, total_n_ranks;
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &total_n_ranks);
+    Population pop;
+    if(my_rank == 0){
+        setlocale(LC_ALL, "");
+        srand((unsigned)time(NULL));
+        int answer = 1;
+        while(answer >= 1 && answer <= 5){
+             //Initial population
+            pop.size = 10;
+            MPI_Bcast(&pop.size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+            pop.generation = 1;
+            int chromosome_size;
+            pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
+            printf("\n===============================================================================================================\n");
+            printf("                            CHOOSE AN OPTION OF BENCHMARK\n");
+            printf("===============================================================================================================\n");
+            printf("(1) D = A + B;\n");
+            printf("(2) D = A %% B;\n");
+            printf("(3) D = (A + B) - (B + C);\n");
+            printf("(4) D = IF(A + B > C) THEN 1 ELSE 0;\n");
+            printf("(5) D = IF(A == B) THEN 1 ELSE 0;\n");
+            printf("(ANOTHER INT NUMBER) FINISH THE PROGRAM;\n");
+            isMemoryAllocated(pop.chromosomes);
+            int num_instructions = 0;
+            int correct_answer = 0;
+            int isBestChrom = 0;
+           
+            int values_to_regA[NUM_VALUES] = {10, 3, 10, 9, 100, 32, 40, 54, 23, 62};
+            int values_to_regB[NUM_VALUES] = {15, 36, 2, 9, 12, 24, 54, 23, 11, 7};
+            int values_to_regC[NUM_VALUES] = {5, 13, 24, 39, 52, 62, 55, 33, 21, 50};
+            int regA = 0, regB = 0, regC = 0;
+            char* exp_string  = NULL;
+            printf("TYPE THE ANSWER: \n");
+            while(scanf("%d", &answer) != 1 || answer < 1){
+                while(getchar() != '\n');
+                printf("INVALID OPERATION! PLEASE CHOOSE A VALID NUMBER(1-5): ");            
+            }
+            switch(answer){
+                case 1:
+                    exp_string = "D = A + B"; //expression
+                    chromosome_size = 8;
+                    initialize_population(&pop, chromosome_size);
+                    print_population(&pop);
+                    pop.e = generate_f1(&pop); //sum, mov
+                    num_instructions = pop.e->num_instructions;
+                    MPI_Bcast(&pop.e->num_instructions, 1, MPI_INT, 0, MPI_COMM_WORLD);
+                    calc_fitness_first_pop(&pop);
+                    genetic_alg(&pop);
+                    isBestChrom = check_best_chrom(&pop);
+                    if(isBestChrom){
+                        printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
+                        for(int i = 0; i < NUM_VALUES; i++){
+                            populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 0, 0); //A, B, C, D
+                            correct_answer = values_to_regA[i] + values_to_regB[i];
+                            regA = values_to_regA[i];
+                            regB = values_to_regB[i];
+                            test_benchmark_with_values(&pop, correct_answer, regA, regB, 0, exp_string);
+                        }
+                    }else{
+                        printf("Not equal! Not the best chrom!\n");
+                    }
+                    break;
+                case 2:
+                    exp_string = "D = A % B"; //expression
+                    chromosome_size = 8;
+                    initialize_population(&pop, chromosome_size);
+                    print_population(&pop);
+                    pop.e = generate_f2(&pop); //mod, mov
+                    num_instructions = pop.e->num_instructions;
+                    calc_fitness_first_pop(&pop);
+                    genetic_alg(&pop);
+                    isBestChrom = check_best_chrom(&pop);
+                    if(isBestChrom){
+                        printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
+                        for(int i = 0; i < NUM_VALUES; i++){
+                            populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
+                            correct_answer = values_to_regA[i] % values_to_regB[i];
+                            regA = values_to_regA[i];
+                            regB = values_to_regB[i];
+                            test_benchmark_with_values(&pop, correct_answer, regA, regB, 0, exp_string);
+                        }
+                    }else{
+                        printf("Not equal! Not the best chrom!\n");
+                    }
+                    break;
+                case 3:
+                    exp_string = "D = (A + B) - (B + C)"; //expression
+                    chromosome_size = 16;
+                    initialize_population(&pop, chromosome_size);
+                    print_population(&pop);
+                    pop.e = generate_f3(&pop); //
+                    num_instructions = pop.e->num_instructions;
+                    genetic_alg(&pop);
+                    isBestChrom = check_best_chrom(&pop);
+                    if(isBestChrom){
+                        printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
+                        for(int i = 0; i < NUM_VALUES; i++){
+                            populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
+                            correct_answer = (values_to_regA[i] + values_to_regB[i]) - (values_to_regB[i] + values_to_regC[i]);
+                            regA = values_to_regA[i];
+                            regB = values_to_regB[i];
+                            regC = values_to_regC[i];
+                            test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
+                        }
+                    }else{
+                        printf("Not equal! Not the best chrom!\n");
+                    }
+                    break;
+                case 4:
+                    exp_string = "D = IF(A + B > C) THEN 1 ELSE 0"; //expression
+                    chromosome_size = 16;
+                    initialize_population(&pop, chromosome_size);
+                    print_population(&pop);
+                    pop.e = generate_f4(&pop); //"add", "greater_than", "if_function", "mov"
+                    num_instructions = pop.e->num_instructions;
+                    genetic_alg(&pop);
+                    isBestChrom = check_best_chrom(&pop);
+                    if(isBestChrom){
+                        printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
+                        for(int i = 0; i < NUM_VALUES; i++){
+                            populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
+                            correct_answer = ((values_to_regA[i] + values_to_regB[i]) > values_to_regC[i])? 1: 0;
+                            regA = values_to_regA[i];
+                            regB = values_to_regB[i];
+                            regC = values_to_regC[i];
+                            test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
+                        }
+                    }else{
+                        printf("Not equal! Not the best chrom!\n");
+                    }
+                    break;
+                case 5:
+                    exp_string = "D = IF(A == B+1 && B == C+1) THEN 1 ELSE 0"; //expression
+                    chromosome_size = 28;
+                    initialize_population(&pop, chromosome_size);
+                    print_population(&pop);
+                    pop.e = generate_f5(&pop); //increment, is_equal, increment, is_equal, and_function, if_function, mov
+                    num_instructions = pop.e->num_instructions;
+                    genetic_alg(&pop);
+                    isBestChrom = check_best_chrom(&pop);
+                    if(isBestChrom){
+                        printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
+                        for(int i = 0; i < NUM_VALUES; i++){
+                            populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
+                            int a = values_to_regA[i], b = values_to_regB[i], c = values_to_regC[i];
+                            b++;
+                            c++;
+                            correct_answer = (a == b && b == c)? 1: 0; 
+                            regA = values_to_regA[i];
+                            regB = values_to_regB[i];
+                            regC = values_to_regC[i];
+                            test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
+                        }
+                    }else{
+                        printf("Not equal! Not the best chrom!\n");
+                    }
+                    break;
+                default:
+                    printf("Finishing the program...\n");
+                    break;
+            }
         }
-        switch(answer){
-            case 1:
-                exp_string = "D = A + B"; //expression
-                chromosome_size = 8;
-                initialize_population(&pop, chromosome_size);
-                print_population(&pop);
-                pop.e = generate_f1(&pop); //sum, mov
-                num_instructions = pop.e->num_instructions;
-                genetic_alg(&pop);
-                isBestChrom = check_best_chrom(&pop);
-                if(isBestChrom){
-                    printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
-                    for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
-                        populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 0, 0); //A, B, C, D
-                        correct_answer = values_to_regA[i] + values_to_regB[i];
-                        regA = values_to_regA[i];
-                        regB = values_to_regB[i];
-                        test_benchmark_with_values(&pop, correct_answer, regA, regB, 0, exp_string);
-                    }
-                }else{
-                    printf("Not equal! Not the best chrom!\n");
-                }
-                break;
-            case 2:
-                exp_string = "D = A % B"; //expression
-                chromosome_size = 8;
-                initialize_population(&pop, chromosome_size);
-                print_population(&pop);
-                pop.e = generate_f2(&pop); //mod, mov
-                num_instructions = pop.e->num_instructions;
-                genetic_alg(&pop);
-                isBestChrom = check_best_chrom(&pop);
-                if(isBestChrom){
-                    printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
-                    for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
-                        populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
-                        correct_answer = values_to_regA[i] % values_to_regB[i];
-                        regA = values_to_regA[i];
-                        regB = values_to_regB[i];
-                        test_benchmark_with_values(&pop, correct_answer, regA, regB, 0, exp_string);
-                    }
-                }else{
-                    printf("Not equal! Not the best chrom!\n");
-                }
-                break;
-            case 3:
-                exp_string = "D = (A + B) - (B + C)"; //expression
-                chromosome_size = 16;
-                initialize_population(&pop, chromosome_size);
-                print_population(&pop);
-                pop.e = generate_f3(&pop); //
-                num_instructions = pop.e->num_instructions;
-                genetic_alg(&pop);
-                isBestChrom = check_best_chrom(&pop);
-                if(isBestChrom){
-                    printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
-                    for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
-                        populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
-                        correct_answer = (values_to_regA[i] + values_to_regB[i]) - (values_to_regB[i] + values_to_regC[i]);
-                        regA = values_to_regA[i];
-                        regB = values_to_regB[i];
-                        regC = values_to_regC[i];
-                        test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
-                    }
-                }else{
-                    printf("Not equal! Not the best chrom!\n");
-                }
-                break;
-            case 4:
-                exp_string = "D = IF(A + B > C) THEN 1 ELSE 0"; //expression
-                chromosome_size = 16;
-                initialize_population(&pop, chromosome_size);
-                print_population(&pop);
-                pop.e = generate_f4(&pop); //"add", "greater_than", "if_function", "mov"
-                num_instructions = pop.e->num_instructions;
-                genetic_alg(&pop);
-                isBestChrom = check_best_chrom(&pop);
-                if(isBestChrom){
-                    printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
-                    for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
-                        populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
-                        correct_answer = ((values_to_regA[i] + values_to_regB[i]) > values_to_regC[i])? 1: 0;
-                        regA = values_to_regA[i];
-                        regB = values_to_regB[i];
-                        regC = values_to_regC[i];
-                        test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
-                    }
-                }else{
-                    printf("Not equal! Not the best chrom!\n");
-                }
-                break;
-            case 5:
-                exp_string = "D = IF(A == B+1 && B == C+1) THEN 1 ELSE 0"; //expression
-                chromosome_size = 28;
-                initialize_population(&pop, chromosome_size);
-                print_population(&pop);
-                pop.e = generate_f5(&pop); //increment, is_equal, increment, is_equal, and_function, if_function, mov
-                num_instructions = pop.e->num_instructions;
-                genetic_alg(&pop);
-                isBestChrom = check_best_chrom(&pop);
-                if(isBestChrom){
-                    printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
-                    for(int i = 0; i < sizeof(values_to_regA)/sizeof(values_to_regA[0]); i++){
-                        populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
-                        int a = values_to_regA[i], b = values_to_regB[i], c = values_to_regC[i];
-                        b++;
-                        c++;
-                        correct_answer = (a == b && b == c)? 1: 0; 
-                        regA = values_to_regA[i];
-                        regB = values_to_regB[i];
-                        regC = values_to_regC[i];
-                        test_benchmark_with_values(&pop, correct_answer, regA, regB, regC, exp_string);
-                    }
-                }else{
-                    printf("Not equal! Not the best chrom!\n");
-                }
-                break;
-            default:
-                printf("Finishing the program...\n");
-                break;
-        }
+    }
+    else{
+        printf("GREETINGS FROM SLAVE RANK %d!\n", my_rank);
+        pop.size = 0;
+        MPI_Bcast(&pop.size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        printf("Rank %d received pop.size = %d\n", my_rank, pop.size); 
+        pop.e = malloc(sizeof(Expression));
+        pop.e->num_instructions = 0;
+        MPI_Bcast(&pop.e->num_instructions, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        genetic_alg(&pop);
     }
     MPI_Finalize();
     return 0;

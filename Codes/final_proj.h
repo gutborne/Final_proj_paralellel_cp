@@ -13,6 +13,8 @@
 #define NUM_INPUTS 2
 #define NUM_BITS 4
 #define TAG_STOP 1
+#define TAG_DATA 0
+#define NUM_VALUES 10
 
 typedef struct INSTRUCTION Instruction;
 typedef struct EXPRESSION Expression;
@@ -269,7 +271,8 @@ void print_instruc_arr(Instruction* i, int limit);
  * @param instruc_input Array of strings containing instruction names.
  */
 void populate_instruc_arr(Expression* exp, const char* instruc_input[]);
-//================================Utility Functions========================================
 
+void calc_fitness_first_pop(Population* pop);
+//================================Utility Functions========================================
 
 #endif
