@@ -116,7 +116,7 @@ int main(){
     int answer = 1;
     while(answer >= 1 && answer <= 5){
         Population pop; //Initial population
-        pop.size = 150; 
+        pop.size = 10; 
         pop.generation = 1;
         int chromosome_size;
         pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
