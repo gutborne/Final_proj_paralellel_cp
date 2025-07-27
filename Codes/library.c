@@ -152,6 +152,8 @@ int* generate_perfect_chrom(Expression* e){
     int num_instructions = e->num_instructions;
     char* perfect_indiv_char = malloc(sizeof(char) * (num_instructions * NUM_BITS));
     int* perfect_indiv_int = malloc(sizeof(int) * (num_instructions * NUM_BITS));
+    printf("PERFECT CHROM: ");
+    isMemoryAllocated(perfect_indiv_int);
     for(int i = 0; i < num_instructions; i++){
         if(i == 0)
             sprintf(perfect_indiv_char, "%s", e->Instruc_arr[i].code);
@@ -171,9 +173,14 @@ int* generate_perfect_chrom(Expression* e){
 }
 
 int fitness_func(Chromosome* chrom, Expression* e){
+    assert(chrom != NULL);
+    assert(chrom->bin_arr != NULL);
+    assert(e != NULL);
+    assert(e->perfect_chrom != NULL);
     int chrom_size = chrom->size;
     int num_instructions = e->num_instructions;
     chrom->fitness = num_instructions * NUM_BITS;
+    
     for(int j = 0; j < num_instructions * NUM_BITS; j++) {
         if(chrom->bin_arr[j] != e->perfect_chrom[j]){
             chrom->fitness -= 1;
@@ -209,75 +216,130 @@ void print_chromosome(Chromosome* chrom){
 }
 
 void genetic_alg(Population* pop) {
-    int flag = TRUE;
-    double mutation_rate = (double)rand() / RAND_MAX;
-    pop->generation = 1; 
-    int chrom_size = NUM_BITS * pop->e->num_instructions;
     int my_rank, total_n_process;
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &total_n_process);
     MPI_Status stat;
+    if(my_rank == 0){
+        printf("[RANK %d] Entered genetic_alg. pop.e = %p, perfect_chrom = %p, size = %d\n",
+            my_rank, (void*)pop->e, (void*)pop->e->perfect_chrom,
+            pop->e->num_instructions * NUM_BITS);
+    }
+    int flag = TRUE;
+    double mutation_rate = (double)rand() / RAND_MAX;
+    pop->generation = 1; 
+    int num_instruc_master = (my_rank == 0)? pop->e->num_instructions: 0;
+    MPI_Bcast(&num_instruc_master, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(pop->e->perfect_chrom, NUM_BITS * num_instruc_master, MPI_INT, 0, MPI_COMM_WORLD);
+    if (my_rank == 0) {
+        //test if we have a perfect chrom in the first population created
+        if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
+            flag = FALSE;
+            // Master sends stop signal AFTER a perfect chorm is found 
+            for (int rank = 1; rank < total_n_process; rank++) {
+                MPI_Send(NULL, 0, MPI_INT, rank, TAG_STOP, MPI_COMM_WORLD);
+            }
+        }
+        while (pop->generation <= 10 && flag == TRUE) {
+            Chromosome parents[2];
+            printf("                                GENERATION %dTH\n", pop->generation);
+            // Generate new population
+            for (int i = 0; i < pop->size; i++) {
+                parents[0] = selection(pop);
+                parents[1] = selection(pop);
+                free_chromosome(&pop->chromosomes[i]);
+                pop->chromosomes[i] = crossover(&parents[0], &parents[1], pop->e->num_instructions, i);
+                mutation_rate = (double)rand() / RAND_MAX;
+                if (mutation_rate > 0.1 && mutation_rate < 0.7) {
+                    mutation(&pop->chromosomes[i], pop->e->num_instructions);
+                }
+            }
+            //MPI_Barrier(MPI_COMM_WORLD);
+            // Send chromosomes to slaves in round-robin
+            for (int i = 0; i < pop->size; i++) {
+                int slave_rank = 1 + (i % (total_n_process - 1));
+		        printf("[RANK %d] Sending chrom %d to slave %d\n", my_rank, i, slave_rank);
+                fflush(stdout);
+                MPI_Send(pop->chromosomes[i].bin_arr, NUM_BITS * pop->e->num_instructions, MPI_INT, slave_rank, TAG_DATA, MPI_COMM_WORLD);
+            }
 
-    while (pop->generation <= 10 && flag == TRUE) {
-        if (my_rank == 0) {
+            // Receive fitness values
+            int fitness;
+            for (int i = 0; i < pop->size; i++) {
+                int slave_rank = 1 + (i % (total_n_process - 1));
+                MPI_Recv(&fitness, 1, MPI_INT, slave_rank, TAG_DATA, MPI_COMM_WORLD, &stat);
+                pop->chromosomes[i].fitness = fitness;
+            }
+            find_best_fitness_of_pop(pop);
+            find_best_chrom_of_pop(pop);
+            
             if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
                 flag = FALSE;
                 // Master sends stop signal AFTER a perfect chorm is found 
                 for (int rank = 1; rank < total_n_process; rank++) {
                     MPI_Send(NULL, 0, MPI_INT, rank, TAG_STOP, MPI_COMM_WORLD);
                 }
+                break;
             }
-            break;
-        } else {
-            Chromosome parents[2];
-            if (my_rank == 0) { // Master
-                printf("                                GENERATION %dTH\n", pop->generation);
-                // Generate new population
-                for (int i = 0; i < pop->size; i++) {
-                    parents[0] = selection(pop);
-                    parents[1] = selection(pop);
-                    pop->chromosomes[i] = crossover(&parents[0], &parents[1], pop->e->num_instructions, i);
-                    mutation_rate = (double)rand() / RAND_MAX;
-                    if (mutation_rate > 0.1 && mutation_rate < 0.7) {
-                        mutation(&pop->chromosomes[i], pop->e->num_instructions);
-                    }
-                }
-                // Send chromosomes to slaves in round-robin
-                for (int i = 0; i < pop->size; i++) {
-                    int slave_rank = 1 + (i % (total_n_process - 1));
-                    MPI_Send(pop->chromosomes[i].bin_arr, chrom_size, MPI_INT, slave_rank, TAG_DATA, MPI_COMM_WORLD);
-                }
-
-                // Receive fitness values
-                int fitness;
-                for (int i = 0; i < pop->size; i++) {
-                    int slave_rank = 1 + (i % (total_n_process - 1));
-                    MPI_Recv(&fitness, 1, MPI_INT, slave_rank, TAG_DATA, MPI_COMM_WORLD, &stat);
-                    pop->chromosomes[i].fitness = fitness;
-                }
-            } else { // Slaves
-                int* buffer = malloc(sizeof(int) * chrom_size);
-                while (TRUE) {
-                    MPI_Probe(0, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
-                    if (stat.MPI_TAG == TAG_STOP) {
-                        break;
-                    }
-                    MPI_Recv(buffer, chrom_size, MPI_INT, 0, TAG_DATA, MPI_COMM_WORLD, &stat);
-                    Chromosome chrom;
-                    chrom.bin_arr = buffer;
-                    chrom.size = chrom_size;
-                    int fitness = fitness_func(&chrom, pop->e);
-                    MPI_Send(&fitness, 1, MPI_INT, 0, TAG_DATA, MPI_COMM_WORLD);
-                }
-                free(buffer);
+            pop->generation++;
+        } 
+    } else { // Slaves
+        // Rebuild Expression structure every time genetic_alg is called
+        pop->e = malloc(sizeof(Expression));
+        isMemoryAllocated(pop->e);
+        int num_instruc_slave = 0;
+        MPI_Bcast(&num_instruc_slave, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        printf("RANK: %d | NUM_STRUCTION_SLAVE: %d", my_rank, num_instruc_slave);
+        pop->e->num_instructions = num_instruc_slave;
+        pop->e->perfect_chrom = malloc(sizeof(int) * (num_instruc_slave * NUM_BITS));
+        int chrom_size = num_instruc_slave * NUM_BITS;
+        isMemoryAllocated(pop->e->perfect_chrom);
+        MPI_Bcast(pop->e->perfect_chrom, chrom_size, MPI_INT, 0, MPI_COMM_WORLD);
+        
+        //MPI_Barrier(MPI_COMM_WORLD);
+        while (TRUE) {
+            int* buffer = malloc(sizeof(int) * (num_instruc_slave * NUM_BITS));
+            MPI_Probe(0, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
+	        printf("[RANK %d] Waiting for MPI_Probe\n", my_rank);
+            fflush(stdout);
+            if (stat.MPI_TAG == TAG_STOP) {
+                break;
+            }
+	        printf("[RANK %d] Received chrom, computing fitness\n", my_rank);
+	        fflush(stdout);
+            MPI_Recv(buffer, num_instruc_slave * NUM_BITS, MPI_INT, 0, TAG_DATA, MPI_COMM_WORLD, &stat);
+            Chromosome chrom;
+            chrom.size = num_instruc_slave * NUM_BITS;
+            chrom.bin_arr = malloc(sizeof(int) * chrom.size);
+            memcpy(chrom.bin_arr, buffer, sizeof(int) * chrom.size);
+                // 🔍 Defensive checks before calling fitness_func
+            if (num_instruc_slave <= 0 || num_instruc_slave > 100) {
+                fprintf(stderr, "[RANK %d] ERROR: num_instruc_slave is non-positive: %d\n", my_rank, num_instruc_slave);
+                MPI_Abort(MPI_COMM_WORLD, 1);
             }
 
-            if (my_rank == 0) {
-                find_best_fitness_of_pop(pop);
-                find_best_chrom_of_pop(pop);
+            if (pop->e == NULL || pop->e->perfect_chrom == NULL) {
+                fprintf(stderr, "[RANK %d] ERROR: pop->e or perfect_chrom is NULL\n", my_rank);
+                MPI_Abort(MPI_COMM_WORLD, 1);
             }
+
+            if (chrom.bin_arr == NULL) {
+                fprintf(stderr, "[RANK %d] ERROR: Failed to allocate chrom.bin_arr\n", my_rank);
+                MPI_Abort(MPI_COMM_WORLD, 1);
+            }
+
+            if (num_instruc_slave <= 0 || pop->e == NULL || pop->e->perfect_chrom == NULL) {
+                fprintf(stderr, "[RANK %d] ERROR: Invalid expression state before fitness_func\n", my_rank);
+                MPI_Abort(MPI_COMM_WORLD, 1);
+            }
+            int fitness = fitness_func(&chrom, pop->e);
+            MPI_Send(&fitness, 1, MPI_INT, 0, TAG_DATA, MPI_COMM_WORLD);
+            free(chrom.bin_arr);
+            free(buffer);
         }
-        pop->generation++;
+        free(pop->e->perfect_chrom);
+        free(pop->e);
+        pop->e = NULL;
     }
     if (flag && my_rank == 0) {
         printf("A PERFECT CHROM WASN'T FOUND!\n");
@@ -339,6 +401,81 @@ Instruction instruc_list[] = {
 //================================Instruction List================================================
 
 //================================Utility Functions===============================================
+//================================Memory Deallocation Functions========================================
+
+void free_chromosome(Chromosome* chrom) {
+    if (chrom == NULL) return;
+    if (chrom->double_arr != NULL) {
+        free(chrom->double_arr);
+        chrom->double_arr = NULL;
+    }
+    if (chrom->bin_arr != NULL) {
+        free(chrom->bin_arr);
+        chrom->bin_arr = NULL;
+    }
+    // Note: The Chromosome struct itself is usually part of an array (Population.chromosomes)
+    // and will be freed by free(pop->chromosomes) in free_population.
+    // So, don't free 'chrom' here.
+}
+
+void free_instruction_contents(Instruction* instr) {
+    if (instr == NULL) return;
+    // name and code are dynamically allocated in generate_fX using strdup
+    if (instr->name != NULL) {
+        free(instr->name);
+        instr->name = NULL;
+    }
+    if (instr->code != NULL) {
+        free(instr->code);
+        instr->code = NULL;
+    }
+    // input_regs and output_reg point to memory WITHIN exp->registers,
+    // so they should NOT be freed here. They are freed when exp->registers is freed.
+    if (instr->input_regs != NULL) {
+        free(instr->input_regs); // Free the array of pointers, not what they point to
+        instr->input_regs = NULL;
+    }
+    // output_reg is a single pointer, which also points into exp->registers
+    // So no free for output_reg here.
+}
+
+void free_expression_contents(Expression* exp) {
+    if (exp == NULL) return;
+
+    if (exp->registers != NULL) {
+        free(exp->registers);
+        exp->registers = NULL;
+    }
+
+    if (exp->Instruc_arr != NULL) {
+        for (int i = 0; i < exp->num_instructions; i++) {
+            // Free contents of each instruction struct
+            free_instruction_contents(&exp->Instruc_arr[i]);
+        }
+        free(exp->Instruc_arr);
+        exp->Instruc_arr = NULL;
+    }
+
+    if (exp->perfect_chrom != NULL) {
+        free(exp->perfect_chrom);
+        exp->perfect_chrom = NULL;
+    }
+    // Note: The Expression struct itself is freed separately in main.
+}
+
+
+void free_population(Population* pop) {
+    if (pop == NULL) return;
+    if (pop->chromosomes != NULL) {
+        for (int i = 0; i < pop->size; i++) {
+            free_chromosome(&pop->chromosomes[i]);
+        }
+        free(pop->chromosomes);
+        pop->chromosomes = NULL;
+    }
+    // Note: pop->e is a pointer to Expression, which is freed separately in main
+    // using free_expression_contents and then free(pop->e).
+}
 void print_registers_address(Instruction* Instruc_arr, int num_instructions){
     for(int i = 0; i < num_instructions; i++){
         printf("instruction name: %s\n", Instruc_arr[i].name);
@@ -350,7 +487,7 @@ void print_registers_address(Instruction* Instruc_arr, int num_instructions){
 
 void isMemoryAllocated(void* pointer){
     if(pointer != NULL){
-        printf("memory alocated!\n");
+        printf("memory alocated at address %p!\n", pointer);
     }else{
         printf("error in allocate memory!\n");
     }
@@ -371,8 +508,8 @@ void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
         //dont forget to create a function to count how many elements has instruc_list[] 
         for(int i = 0; i < 10; i++){// 10 is the current number of elements of instruc_list[]
             if(strcmp(instruc_list[i].name, instruc_input[index]) == 0){
-                exp->Instruc_arr[index].name = instruc_list[i].name;
-                exp->Instruc_arr[index].code = instruc_list[i].code;
+                exp->Instruc_arr[index].name = strdup(instruc_list[i].name);
+                exp->Instruc_arr[index].code = strdup(instruc_list[i].code);
                 exp->Instruc_arr[index].ptr_to_func = instruc_list[i].ptr_to_func;
                 index++;
                 break;
@@ -383,7 +520,6 @@ void populate_instruc_arr(Expression* exp, const char* instruc_input[]){
 }
 
 void calc_fitness_first_pop(Population* pop){
-    printf("num_instruc: %d\n", pop->e->num_instructions);
     for(int i = 0; i < pop->size; i++){
         pop->chromosomes[i].fitness = fitness_func(&(pop->chromosomes[i]), pop->e);
     }
@@ -422,12 +558,10 @@ Expression* generate_f1(Population* pop){
     isMemoryAllocated(exp->registers);
     populate_instruc_arr(exp, ptr_f1);
     exp->perfect_chrom = generate_perfect_chrom(exp);
-    pop->e->num_instructions = exp->num_instructions;
     calc_fitness_first_pop(pop);
     //sum
     exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
-    exp->Instruc_arr[1].output_reg = &exp->registers[3];
     exp->Instruc_arr[0].input_regs[1] = &exp->registers[1]; //registers[1] = regB
     exp->Instruc_arr[0].output_reg = &exp->registers[0];
     
@@ -435,6 +569,7 @@ Expression* generate_f1(Population* pop){
     exp->Instruc_arr[1].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[1].input_regs[0] = &exp->registers[0]; //registers[0] = regA
     exp->Instruc_arr[1].input_regs[1] = &exp->registers[1]; //registers[1] = regB
+    exp->Instruc_arr[1].output_reg = &exp->registers[3];
     print_registers_address(exp->Instruc_arr, exp->num_instructions);
     return exp;
 }

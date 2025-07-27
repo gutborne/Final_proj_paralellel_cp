@@ -1,6 +1,7 @@
 #ifndef FINAL_PROJ_H
 #define FINAL_PROJ_H
-
+#define _POSIX_C_SOURCE 200809L
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -274,5 +275,13 @@ void populate_instruc_arr(Expression* exp, const char* instruc_input[]);
 
 void calc_fitness_first_pop(Population* pop);
 //================================Utility Functions========================================
+// ... (your existing prototypes) ...
 
+//================================Memory Deallocation Functions========================================
+void free_chromosome(Chromosome* chrom);
+void free_population(Population* pop);
+void free_instruction_contents(Instruction* instr); // For freeing name, code
+void free_expression_contents(Expression* exp); // For freeing internal arrays of Expression
+
+// ... (your existing prototypes) ...
 #endif

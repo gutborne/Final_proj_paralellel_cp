@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "final_proj.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "string.h": "c"
     }
 }
