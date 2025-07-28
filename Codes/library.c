@@ -125,19 +125,24 @@ void print_pop_with_fitness(Population* population){
     int chrom_size = population->chromosomes[0].size;
     for(int i = 0; i < population->size; i++){
         printf("%d chrom: ", i + 1);
+        fflush(stdout);
         /*for(int j = 0; j < chrom_size; j++){
             printf("%.2lf ", population->chromosomes[i].double_arr[j]);
-        }*/
-        printf("\n");
+            }*/
+           printf("\n");
         for(int j = 0; j < chrom_size; j++){
             printf("%2d ", population->chromosomes[i].bin_arr[j]);
+            fflush(stdout);
         }
         printf("\n");
         printf("fitness: %d\n", population->chromosomes[i].fitness);
+        fflush(stdout);
     }
     printf("\nbest Chromosome: \n");
+    fflush(stdout);
     for(int i = 0; i < chrom_size; i++){
         printf("%d ", population->best_chromosome.bin_arr[i]);
+        fflush(stdout);
     }
     printf("\n");
     /*
@@ -229,9 +234,9 @@ void genetic_alg(Population* pop) {
     double mutation_rate = (double)rand() / RAND_MAX;
     pop->generation = 1; 
     int num_instruc_master = (my_rank == 0)? pop->e->num_instructions: 0;
-    MPI_Bcast(&num_instruc_master, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(pop->e->perfect_chrom, NUM_BITS * num_instruc_master, MPI_INT, 0, MPI_COMM_WORLD);
     if (my_rank == 0) {
+        MPI_Bcast(&num_instruc_master, 1, MPI_INT, 0, MPI_COMM_WORLD);
+        MPI_Bcast(pop->e->perfect_chrom, NUM_BITS * num_instruc_master, MPI_INT, 0, MPI_COMM_WORLD);
         //test if we have a perfect chrom in the first population created
         if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
             flag = FALSE;
@@ -240,7 +245,7 @@ void genetic_alg(Population* pop) {
                 MPI_Send(NULL, 0, MPI_INT, rank, TAG_STOP, MPI_COMM_WORLD);
             }
         }
-        while (pop->generation <= 10 && flag == TRUE) {
+        while (pop->generation <= 20 && flag == TRUE) {
             Chromosome parents[2];
             printf("                                GENERATION %dTH\n", pop->generation);
             // Generate new population
@@ -254,6 +259,7 @@ void genetic_alg(Population* pop) {
                     mutation(&pop->chromosomes[i], pop->e->num_instructions);
                 }
             }
+            print_pop_with_fitness(pop);
             //MPI_Barrier(MPI_COMM_WORLD);
             // Send chromosomes to slaves in round-robin
             for (int i = 0; i < pop->size; i++) {
