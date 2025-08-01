@@ -15,62 +15,34 @@ int (*Code(char code))(int, int){
 */
 const char* f1[3] = {"sum", "mov", "afklsdj"};
 
-int count_instructionsf1(const char* f1[]){ 
-    int number_instructions = sizeof(f1)/sizeof(f1[0]);
-    printf("\nnumber of instructions: %d\n", number_instructions);
-    return number_instructions;
-}
+
 int main(){
-    //                          function pointers
-    /*
-    int (*ptr_func)(int, int);
-    ptr_func = add;
-
-    int sum = ptr_func(2,3); //implicit dereference
-    int sum1 = (*ptr_func)(4,5); //explicit dereference
-    printf("%d %d\n", sum, sum1);
-    ptr_func = Code('-');
-    printf("%d \n", ptr_func(7,3));
-    int (*ptr_f[])(int, int) = {add, sub};*/
-    int num[3] = {1, 0, 1};
-    char* code = "101";
-    char curr_char = ' ';
-    for(int i = 0; i < 3;){
-        curr_char = num[i] + '0'; 
-        if(curr_char == code[i]) i++;
-        else{
-            printf("not equal\n");
-            break;
-        } 
-        printf("equals\n");
-    }
-    
    
-    char** ptr_f1 = f1;
 
-    for(int i = 0; i < 4; i++){
-        printf("%s\n", f1[i]);
-        if(strcmp(f1[i], "sum") == 0){
-            printf("Are equal\n");
-        }else{
-            printf("arent equal\n");
+    int f = 1;
+    while(f >= 1 && f <= 3){
+        printf("TYPE THE ANSWER: \n");
+        fflush(stdout);
+        while(scanf("%d", &f) != 1 || f < 1){
+            while(getchar() != '\n');
+            printf("INVALID OPERATION! PLEASE CHOOSE A VALID NUMBER(1-3): ");
+            fflush(stdout);            
+        }
+        switch(f){
+            case 1:
+                for(int i = 0; i < 100; i++) printf("inside case %d\n", f);
+                break;
+                
+            case 2:
+                for(int i = 0; i < 100; i++) printf("inside case %d\n", f);
+                break;
+            case 3:
+                for(int i = 0; i < 100; i++) printf("inside case %d\n", f);
+                break;
+            default:
+                printf("finish the program!");
+                break;
         }
     }
-    printf("\n\nsizeof(f1): %d\n", sizeof(ptr_f1));
-    printf("\n\nsizeof(f1): %d\n", sizeof(ptr_f1[0]));
-    printf("\nlen(f1): %d\n\n", sizeof(ptr_f1)/sizeof(ptr_f1[0]));
-    for(int i = 0; i < sizeof(ptr_f1)/sizeof(ptr_f1[0]); i++){
-        printf("%s ", ptr_f1[i]);
-    }
-    int var = 1;
-    int* ptr_var = &var;
-    if(&var == ptr_var)
-        printf("\nvar: %p ptr_var: %p\n", &var, ptr_var);
-    char* exp_new = "abc";
-   
-    int res = 5 > 5;
-    printf("res: %d\n", res);
-    int n_instructions = count_instructionsf1(f1);
-    printf("n_instructions: %d\n", n_instructions);
     return 0;
 }

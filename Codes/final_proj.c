@@ -109,9 +109,9 @@ void test_benchmark_with_values(Population* pop, int correct_answer, int regA, i
     printf("      %s               |         %d         |       %s    \n", exp_string_with_values, exp->registers[3], is_correct);
 }
 void menu(){
-    printf("\n===============================================================================================================\n");
+    printf("\n============================================================================================\n");
     printf("                            CHOOSE AN OPTION OF BENCHMARK\n");
-    printf("===============================================================================================================\n");
+    printf("==============================================================================================\n");
     printf("(1) D = A + B;\n");
     printf("(2) D = A %% B;\n");
     printf("(3) D = (A + B) - (B + C);\n");
@@ -119,6 +119,11 @@ void menu(){
     printf("(5) D = IF(A == B) THEN 1 ELSE 0;\n");
     printf("(ANOTHER INT NUMBER) FINISH THE PROGRAM;\n");
     fflush(stdout);
+}
+void print_benchmark(){
+    printf("===========================================================================================\n");
+    printf("                                        BENCHMARK \n");
+    printf("===========================================================================================\n");
 }
 int main(int argc, char** argv){
     MPI_Init(&argc, &argv);
@@ -132,12 +137,12 @@ int main(int argc, char** argv){
         int answer = 1;
         while(answer >= 1 && answer <= 5){
             //Initial population
-            pop.size = 10;
+            pop.size = 200;
             pop.generation = 1;
             int chromosome_size;
-            pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
+            pop.chromosomes = NULL;
+            pop.e = NULL;
             menu();
-            isMemoryAllocated(pop.chromosomes);
             int num_instructions = 0;
             int correct_answer = 0;
             int isBestChrom = 0;
@@ -147,7 +152,7 @@ int main(int argc, char** argv){
             int regA = 0, regB = 0, regC = 0;
             char* exp_string  = NULL;
             printf("TYPE THE ANSWER: \n");
-            fflush(stdout);            
+            fflush(stdout);
             while(scanf("%d", &answer) != 1 || answer < 1){
                 while(getchar() != '\n');
                 printf("INVALID OPERATION! PLEASE CHOOSE A VALID NUMBER(1-5): ");
@@ -155,17 +160,20 @@ int main(int argc, char** argv){
             }
             switch(answer){
                 case 1:
+                    printf("ANSWER CHOSEN: %d\n", answer);
                     exp_string = "D = A + B"; //expression
                     chromosome_size = 8;
+                    pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
                     initialize_population(&pop, chromosome_size);
-                    print_population(&pop);
+                    //print_population(&pop);
                     MPI_Bcast(&answer, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     MPI_Bcast(&pop.size, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     pop.e = generate_f1(&pop); //sum, mov
                     printf("Exp: ");
                     isMemoryAllocated(pop.e);
-                    num_instructions = pop.e->num_instructions;
-                    calc_fitness_first_pop(&pop);
+                    //num_instructions = pop.e->num_instructions;
+                    calc_fitness_first_pop(&pop);//inside itll find out best fitness and best chrom
+                    print_pop_with_fitness(&pop);
                     printf("BEFORE genetic_alg -- pop.e = %p\n", (void*)pop.e);
                     printf("num_instructions = %d\n", pop.e->num_instructions);
                     printf("perfect_chrom = %p\n", (void*)pop.e->perfect_chrom);
@@ -178,11 +186,11 @@ int main(int argc, char** argv){
                         fprintf(stderr, "[RANK 0] ERROR: pop.e or perfect_chrom is NULL before genetic_alg!\n");
                         MPI_Abort(MPI_COMM_WORLD, 1);
                     }
-                    //MPI_Barrier(MPI_COMM_WORLD);
                     genetic_alg(&pop);
                     isBestChrom = check_best_chrom(&pop);
                     if(isBestChrom){
-                        printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
+                        print_benchmark();    
+                        printf("%s(CORRECT ANSWER)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
                         for(int i = 0; i < NUM_VALUES; i++){
                             populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 0, 0); //A, B, C, D
                             correct_answer = values_to_regA[i] + values_to_regB[i];
@@ -195,8 +203,10 @@ int main(int argc, char** argv){
                     }
                     break;
                 case 2:
+                    printf("ANSWER CHOSEN: %d\n", answer);
                     exp_string = "D = A % B"; //expression
                     chromosome_size = 8;
+                    pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
                     initialize_population(&pop, chromosome_size);
                     print_population(&pop);
                     MPI_Bcast(&answer, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -204,17 +214,18 @@ int main(int argc, char** argv){
                     pop.e = generate_f2(&pop); //mod, mov
                     printf("Exp: ");
                     isMemoryAllocated(pop.e);
-                    num_instructions = pop.e->num_instructions;
+                    //num_instructions = pop.e->num_instructions;
                     calc_fitness_first_pop(&pop);
+                    print_pop_with_fitness(&pop);
                     if (!pop.e || !pop.e->perfect_chrom) {
                         fprintf(stderr, "[RANK 0] ERROR: pop.e or perfect_chrom is NULL before genetic_alg!\n");
                         MPI_Abort(MPI_COMM_WORLD, 1);
                     }
-                    //MPI_Barrier(MPI_COMM_WORLD);
                     genetic_alg(&pop);
                     isBestChrom = check_best_chrom(&pop);
                     if(isBestChrom){
                         printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
+                        print_benchmark(); 
                         for(int i = 0; i < NUM_VALUES; i++){
                             populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], 4, 0); //A, B, C, D
                             correct_answer = values_to_regA[i] % values_to_regB[i];
@@ -227,23 +238,26 @@ int main(int argc, char** argv){
                     }
                     break;
                 case 3:
+                    printf("ANSWER CHOSEN: %d\n", answer);
                     exp_string = "D = (A + B) - (B + C)"; //expression
                     chromosome_size = 16;
+                    pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
                     initialize_population(&pop, chromosome_size);
                     print_population(&pop);
                     MPI_Bcast(&answer, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     MPI_Bcast(&pop.size, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     pop.e = generate_f3(&pop); //
-                    num_instructions = pop.e->num_instructions;
+                    //num_instructions = pop.e->num_instructions;
                     calc_fitness_first_pop(&pop);
+                    print_pop_with_fitness(&pop);
                     if (!pop.e || !pop.e->perfect_chrom) {
                         fprintf(stderr, "[RANK 0] ERROR: pop.e or perfect_chrom is NULL before genetic_alg!\n");
                         MPI_Abort(MPI_COMM_WORLD, 1);
                     }
-                    //MPI_Barrier(MPI_COMM_WORLD);
                     genetic_alg(&pop);
                     isBestChrom = check_best_chrom(&pop);
                     if(isBestChrom){
+                        print_benchmark(); 
                         printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
                         for(int i = 0; i < NUM_VALUES; i++){
                             populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
@@ -258,15 +272,18 @@ int main(int argc, char** argv){
                     }
                     break;
                 case 4:
+                    printf("ANSWER CHOSEN: %d\n", answer);
                     exp_string = "D = IF(A + B > C) THEN 1 ELSE 0"; //expression
                     chromosome_size = 16;
+                    pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
                     initialize_population(&pop, chromosome_size);
                     print_population(&pop);
                     MPI_Bcast(&answer, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     MPI_Bcast(&pop.size, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     pop.e = generate_f4(&pop); //"add", "greater_than", "if_function", "mov"
-                    num_instructions = pop.e->num_instructions;
+                    //num_instructions = pop.e->num_instructions;
                     calc_fitness_first_pop(&pop);
+                    print_pop_with_fitness(&pop);
                     if (!pop.e || !pop.e->perfect_chrom) {
                         fprintf(stderr, "[RANK 0] ERROR: pop.e or perfect_chrom is NULL before genetic_alg!\n");
                         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -274,6 +291,7 @@ int main(int argc, char** argv){
                     genetic_alg(&pop);
                     isBestChrom = check_best_chrom(&pop);
                     if(isBestChrom){
+                        print_benchmark(); 
                         printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
                         for(int i = 0; i < NUM_VALUES; i++){
                             populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
@@ -288,15 +306,18 @@ int main(int argc, char** argv){
                     }
                     break;
                 case 5:
+                    printf("ANSWER CHOSEN: %d\n", answer);
                     exp_string = "D = IF(A == B+1 && B == C+1) THEN 1 ELSE 0"; //expression
                     chromosome_size = 28;
+                    pop.chromosomes = malloc(sizeof(Chromosome) * pop.size);
                     initialize_population(&pop, chromosome_size);
                     print_population(&pop);
                     MPI_Bcast(&answer, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     MPI_Bcast(&pop.size, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     pop.e = generate_f5(&pop); //increment, is_equal, increment, is_equal, and_function, if_function, mov
-                    num_instructions = pop.e->num_instructions;
+                    //num_instructions = pop.e->num_instructions;
                     calc_fitness_first_pop(&pop);
+                    print_pop_with_fitness(&pop);
                     if (!pop.e || !pop.e->perfect_chrom) {
                         fprintf(stderr, "[RANK 0] ERROR: pop.e or perfect_chrom is NULL before genetic_alg!\n");
                         MPI_Abort(MPI_COMM_WORLD, 1);
@@ -304,6 +325,7 @@ int main(int argc, char** argv){
 		            genetic_alg(&pop);
                     isBestChrom = check_best_chrom(&pop);
                     if(isBestChrom){
+                        print_benchmark(); 
                         printf("%s(correct answer)      |       GA ANSWER       |       CORRECTNESS   \n", exp_string);
                         for(int i = 0; i < NUM_VALUES; i++){
                             populate_registers(pop.e->registers, values_to_regA[i], values_to_regB[i], values_to_regC[i], 0); //A, B, C, D
@@ -323,56 +345,88 @@ int main(int argc, char** argv){
                 default:
                     MPI_Bcast(&answer, 1, MPI_INT, 0, MPI_COMM_WORLD);
                     printf("Finishing the program...\n");
+                    fflush(stdout);
                     break;
             }
             if (pop.chromosomes != NULL) {
+                printf("RANK %d: POP.CHROMOSOMES != NULL\n", my_rank);
+                fflush(stdout);
                 free_population(&pop); // New function to free chromosomes array
             }
             if (pop.e != NULL) {
+                printf("RANK %d: POP.E != NULL\n", my_rank);
+                fflush(stdout);
                 free_expression_contents(pop.e); // New function to free Expression's internal arrays
                 free(pop.e); // Free the Expression struct itself
                 pop.e = NULL; // Set to NULL to avoid dangling pointer
             }
+            printf("RANK %d: BENCHMARK TEST FINISHED! LETS SEE IF WILL HAVE ANOTHER!\n", my_rank);
         }
     } else { // Slaves
         printf("GREETINGS FROM SLAVE RANK %d!\n", my_rank);
         int master_control_signal; // To receive master's current 'answer' choice
-
+        int benchmark_active = 0;
         while (TRUE) { // Loop indefinitely, waiting for master's signal
             // Slaves must receive the 'answer' choice from the master to know if a new benchmark starts or if program finishes
             MPI_Bcast(&master_control_signal, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	        printf("Rank %d received answer = %d\n", my_rank, master_control_signal);
-            if (master_control_signal < 1 || master_control_signal > 5) {
+            fflush(stdout);
+            if (master_control_signal > 5) {
+                printf("RANK %d: RIGHT BEFORE BREAK\n", my_rank);
+                fflush(stdout);
                 // Master has chosen to finish the program, so slave exits
-                if(pop.e != NULL){
-		  	        free(pop.e->perfect_chrom);
-                	pop.e->perfect_chrom = NULL;
-                	free(pop.e);
-                	pop.e = NULL;
-		        }
                 break; // Exit the slave's main loop
             }
+            // Clear any pending messages from previous runs
+            int flag;
+            MPI_Status status;
+            while (1) {
+                MPI_Iprobe(0, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+                if (!flag) break;
+                
+                if (status.MPI_TAG == TAG_STOP) {
+                    printf("RANK %d: CLEARING PENDING STOP MESSAGE\n", my_rank);
+                    MPI_Recv(NULL, 0, MPI_INT, 0, TAG_STOP, MPI_COMM_WORLD, &status);
+                } else {
+                    // Handle other message types if needed
+                    break;
+                }
+            }
 
+            benchmark_active = 1;
             // Receive pop.size for the new benchmark
             pop.size = 0; // Initialize before receiving
             MPI_Bcast(&pop.size, 1, MPI_INT, 0, MPI_COMM_WORLD);
             printf("Rank %d received pop.size = %d for new benchmark\n", my_rank, pop.size);
             fflush(stdout);
             // Now call genetic_alg for this specific benchmark run
-            //MPI_Barrier(MPI_COMM_WORLD);
             genetic_alg(&pop);
+            printf("RANK %d: GA ALREADY EXECUTED!!\n", my_rank);
+            fflush(stdout);
             // IMPORTANT: Free resources specific to THIS benchmark run on the slave
             // before the next iteration of the while loop.
             // Slaves only receive perfect_chrom and the Expression struct itself in this simplified model
             // (Instruc_arr and registers are only built on master in generate_fX functions)
-            free(pop.e->perfect_chrom);
-            pop.e->perfect_chrom = NULL;
-            free(pop.e);
-            pop.e = NULL;
+            if(pop.e != NULL){
+                printf("RANK %d: WERE AT SLAVE PART OF THE MAIN -> POP.E != NULL\n", my_rank);
+                fflush(stdout);
+                free(pop.e->perfect_chrom);
+                pop.e->perfect_chrom = NULL;
+                free(pop.e);
+                pop.e = NULL;
+            }else{
+                printf("RANK %d: WERE AT SLAVE PART OF THE MAIN -> POP.E == NULL\n", my_rank);
+                fflush(stdout);
+            }
         }
     }
     // MPI_Finalize() is now outside the loop, called only when master signals program end
+    MPI_Barrier(MPI_COMM_WORLD);
+    printf("RANK %d AFTER THE BARRIER, RIGHT BEFORE CALL MPI_FINALIZE!\n", my_rank);
+    fflush(stdout);
     MPI_Finalize();
+    printf("RANK %d AFTER THE FINALIZE, RIGHT BEFORE FINISHING THE PROGRAM!\n", my_rank);
+    fflush(stdout);
     return 0;
 }
 

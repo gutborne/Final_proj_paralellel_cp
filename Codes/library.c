@@ -121,28 +121,21 @@ Chromosome selection(Population* pop){
     Chromosome chrom = helper_selection(pop->chromosomes[index_chosen_parent], pop->chromosomes[index_chosen_parent].size);
     return chrom;
 } 
+
 void print_pop_with_fitness(Population* population){
     int chrom_size = population->chromosomes[0].size;
     for(int i = 0; i < population->size; i++){
         printf("%d chrom: ", i + 1);
-        fflush(stdout);
-        /*for(int j = 0; j < chrom_size; j++){
-            printf("%.2lf ", population->chromosomes[i].double_arr[j]);
-            }*/
-           printf("\n");
+        printf("\n");
         for(int j = 0; j < chrom_size; j++){
             printf("%2d ", population->chromosomes[i].bin_arr[j]);
-            fflush(stdout);
         }
         printf("\n");
         printf("fitness: %d\n", population->chromosomes[i].fitness);
-        fflush(stdout);
     }
     printf("\nbest Chromosome: \n");
-    fflush(stdout);
     for(int i = 0; i < chrom_size; i++){
         printf("%d ", population->best_chromosome.bin_arr[i]);
-        fflush(stdout);
     }
     printf("\n");
     /*
@@ -241,13 +234,17 @@ void genetic_alg(Population* pop) {
         if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
             flag = FALSE;
             // Master sends stop signal AFTER a perfect chorm is found 
+            printf("A PERFECT CHROMOSOME WAS FOUND AT FIRST GENERATION!\n");
+            printf("NOW, WE'RE ABLE TO TEST THE BENCHMARK!\n");
+        
             for (int rank = 1; rank < total_n_process; rank++) {
                 MPI_Send(NULL, 0, MPI_INT, rank, TAG_STOP, MPI_COMM_WORLD);
             }
+            
         }
-        while (pop->generation <= 20 && flag == TRUE) {
+        while (pop->generation <= 400 && flag == TRUE) {
             Chromosome parents[2];
-            printf("                                GENERATION %dTH\n", pop->generation);
+            printf("                                GENERATION %dth\n", pop->generation);
             // Generate new population
             for (int i = 0; i < pop->size; i++) {
                 parents[0] = selection(pop);
@@ -259,7 +256,7 @@ void genetic_alg(Population* pop) {
                     mutation(&pop->chromosomes[i], pop->e->num_instructions);
                 }
             }
-            print_pop_with_fitness(pop);
+            
             //MPI_Barrier(MPI_COMM_WORLD);
             // Send chromosomes to slaves in round-robin
             for (int i = 0; i < pop->size; i++) {
@@ -270,7 +267,7 @@ void genetic_alg(Population* pop) {
             }
 
             // Receive fitness values
-            int fitness;
+            int fitness = 0;
             for (int i = 0; i < pop->size; i++) {
                 int slave_rank = 1 + (i % (total_n_process - 1));
                 MPI_Recv(&fitness, 1, MPI_INT, slave_rank, TAG_DATA, MPI_COMM_WORLD, &stat);
@@ -278,17 +275,21 @@ void genetic_alg(Population* pop) {
             }
             find_best_fitness_of_pop(pop);
             find_best_chrom_of_pop(pop);
+            print_pop_with_fitness(pop);
             
             if(pop->best_fitness == NUM_BITS * pop->e->num_instructions){
                 flag = FALSE;
                 // Master sends stop signal AFTER a perfect chorm is found 
+                printf("A PERFECT CHROMOSOME WAS FOUND AT %dth GENERATION!\n", pop->generation);
+                printf("NOW, WE'RE ABLE TO TEST THE BENCHMARK!\n");
                 for (int rank = 1; rank < total_n_process; rank++) {
+                    printf("SENDING TAG_STOP TO RANK %d\n", rank);
                     MPI_Send(NULL, 0, MPI_INT, rank, TAG_STOP, MPI_COMM_WORLD);
                 }
                 break;
             }
             pop->generation++;
-        } 
+        }
     } else { // Slaves
         // Rebuild Expression structure every time genetic_alg is called
         pop->e = malloc(sizeof(Expression));
@@ -302,13 +303,14 @@ void genetic_alg(Population* pop) {
         isMemoryAllocated(pop->e->perfect_chrom);
         MPI_Bcast(pop->e->perfect_chrom, chrom_size, MPI_INT, 0, MPI_COMM_WORLD);
         
-        //MPI_Barrier(MPI_COMM_WORLD);
         while (TRUE) {
             int* buffer = malloc(sizeof(int) * (num_instruc_slave * NUM_BITS));
             MPI_Probe(0, MPI_ANY_TAG, MPI_COMM_WORLD, &stat);
 	        printf("[RANK %d] Waiting for MPI_Probe\n", my_rank);
             fflush(stdout);
             if (stat.MPI_TAG == TAG_STOP) {
+                printf("RANK %d: ITS NOT NECESSARY TO CALCULATE FITNESS ANYMORE!\n", my_rank);
+                fflush(stdout);
                 break;
             }
 	        printf("[RANK %d] Received chrom, computing fitness\n", my_rank);
@@ -318,8 +320,8 @@ void genetic_alg(Population* pop) {
             chrom.size = num_instruc_slave * NUM_BITS;
             chrom.bin_arr = malloc(sizeof(int) * chrom.size);
             memcpy(chrom.bin_arr, buffer, sizeof(int) * chrom.size);
-                // 🔍 Defensive checks before calling fitness_func
-            if (num_instruc_slave <= 0 || num_instruc_slave > 100) {
+                // Defensive checks before calling fitness_func
+            if (num_instruc_slave <= 0 || num_instruc_slave > 7) {
                 fprintf(stderr, "[RANK %d] ERROR: num_instruc_slave is non-positive: %d\n", my_rank, num_instruc_slave);
                 MPI_Abort(MPI_COMM_WORLD, 1);
             }
@@ -343,15 +345,20 @@ void genetic_alg(Population* pop) {
             free(chrom.bin_arr);
             free(buffer);
         }
+        /*
         free(pop->e->perfect_chrom);
+        pop->e->perfect_chrom = NULL;
         free(pop->e);
         pop->e = NULL;
+        */
     }
+
     if (flag && my_rank == 0) {
         printf("A PERFECT CHROM WASN'T FOUND!\n");
         for (int rank = 1; rank < total_n_process; rank++) {
+            printf("SENDING TAG_STOP TO RANK %d\n", rank);
             MPI_Send(NULL, 0, MPI_INT, rank, TAG_STOP, MPI_COMM_WORLD);
-        }
+        }      
     }
 }
 
@@ -564,7 +571,7 @@ Expression* generate_f1(Population* pop){
     isMemoryAllocated(exp->registers);
     populate_instruc_arr(exp, ptr_f1);
     exp->perfect_chrom = generate_perfect_chrom(exp);
-    calc_fitness_first_pop(pop);
+   
     //sum
     exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
@@ -593,7 +600,6 @@ Expression* generate_f2(Population* pop){
     isMemoryAllocated(exp->registers);
     populate_instruc_arr(exp, ptr_f2);
     exp->perfect_chrom = generate_perfect_chrom(exp);
-    //calc_fitness_first_pop(pop);
     //mod
     exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
@@ -623,7 +629,6 @@ Expression* generate_f3(Population* pop){
     isMemoryAllocated(exp->registers);
     populate_instruc_arr(exp, ptr_f3);
     exp->perfect_chrom = generate_perfect_chrom(exp);
-    //calc_fitness_first_pop(pop);
     //sum
     exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
@@ -663,7 +668,6 @@ Expression* generate_f4(Population* pop){
     isMemoryAllocated(exp->registers);
     populate_instruc_arr(exp, ptr_f4);
     exp->perfect_chrom = generate_perfect_chrom(exp);
-    //calc_fitness_first_pop(pop);
     //add
     exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[0].input_regs[0] = &exp->registers[0]; //registers[0] = regA
@@ -702,7 +706,6 @@ Expression* generate_f5(Population* pop){
     isMemoryAllocated(exp->registers);
     populate_instruc_arr(exp, ptr_f5);
     exp->perfect_chrom = generate_perfect_chrom(exp);
-    //calc_fitness_first_pop(pop);
     //increment
     exp->Instruc_arr[0].input_regs = malloc(sizeof(int*) * NUM_INPUTS);
     exp->Instruc_arr[0].input_regs[0] = &exp->registers[1]; //registers[1] = regB

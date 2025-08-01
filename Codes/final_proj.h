@@ -274,6 +274,8 @@ void print_instruc_arr(Instruction* i, int limit);
 void populate_instruc_arr(Expression* exp, const char* instruc_input[]);
 
 void calc_fitness_first_pop(Population* pop);
+
+void print_pop_with_fitness(Population* pop);
 //================================Utility Functions========================================
 // ... (your existing prototypes) ...
 
